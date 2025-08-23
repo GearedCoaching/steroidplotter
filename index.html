@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Steroid Injection Calculator + Plotter</title>
+  <style>
+    body {
+      background-color: #1c1c1c;
+      color: #f9f9f9;
+      font-family: sans-serif;
+      padding: 30px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #1c1c1c;
+      border: 1px solid #7a7a7a;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    label, input, select {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+    }
+    input, select {
+      padding: 8px;
+      background: #111;
+      border: 1px solid #7a7a7a;
+      color: #f9f9f9;
+      border-radius: 5px;
+    }
+    button {
+      background-color: #b73239;
+      color: white;
+      padding: 12px;
+      border: none;
+      border-radius: 25px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .compound-block {
+      border-top: 1px solid #7a7a7a;
+      padding-top: 15px;
+      margin-top: 20px;
+    }
+    .results {
+      margin-top: 30px;
+      padding: 20px;
+      background: #111;
+      border-radius: 10px;
+      border: 1px solid #7a7a7a;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Injection Calculator + Blood Level Plotter</h2>
+    
+    <label>Number of Compounds</label>
+    <input type="number" id="compoundCount" value="1" min="1" max="10" onchange="renderCompounds()" />
+
+    <div id="compoundContainer"></div>
+
+    <label>Injection Frequency (per week)</label>
+    <select id="frequency">
+      <option value="7">Every day (7x/week)</option>
+      <option value="4">Mon/Wed/Fri/Sun (4x)</option>
+      <option value="3">Every other day (~3x)</option>
+      <option value="2">Twice a week</option>
+      <option value="1">Once a week</option>
+    </select>
+
+    <label>Cycle Duration (weeks)</label>
+    <input type="number" id="cycleWeeks" value="12" min="1" />
+
+    <button onclick="calculate()">Calculate & Plot</button>
+
+    <div class="results" id="resultBox"></div>
+
+    <canvas id="chart" style="margin-top: 40px;"></canvas>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const steroidData = {
+      "Testosterone Enanthate": 120,
+      "Testosterone Propionate": 48,
+      "Testosterone Cypionate": 144,
+      "Trenbolone Acetate": 48,
+      "Trenbolone Enanthate": 120,
+      "Nandrolone Decanoate (Deca)": 192,
+      "Oxymetholone (Anadrol)": 8,
+      "Custom": null
+    };
+
+    function renderCompounds() {
+      const count = parseInt(document.getElementById("compoundCount").value);
+      const container = document.getElementById("compoundContainer");
+      container.innerHTML = "";
+
+      for (let i = 0; i < count; i++) {
+        const div = document.createElement("div");
+        div.classList.add("compound-block");
+        div.innerHTML = `
+          <label>Compound ${i + 1}</label>
+          <select id="compound_${i}" onchange="toggleHalfLife(${i})">
+            ${Object.entries(steroidData).map(([name, hl]) =>
+              `<option value="${name}">${name}${hl ? ` (${hl}h)` : ""}</option>`
+            ).join("")}
+          </select>
+
+          <div id="customHL_${i}" style="display:none;">
+            <label>Custom Half-Life (hours)</label>
+            <input type="number" id="halfLife_${i}" />
+          </div>
+
+          <label>Weekly Dosage (mg)</label>
+          <input type="number" id="weeklyDose_${i}" />
+
+          <label>Concentration (mg/ml)</label>
+          <input type="number" id="concentration_${i}" />
+
+          <label>Vial Size (ml)</label>
+          <input type="number" id="vialSize_${i}" />
+        `;
+        container.appendChild(div);
+      }
+    }
+
+    function toggleHalfLife(index) {
+      const selected = document.getElementById(`compound_${index}`).value;
+      const customDiv = document.getElementById(`customHL_${index}`);
+      customDiv.style.display = selected === "Custom" ? "block" : "none";
+    }
+
+    renderCompounds();
+
+    let chart;
+
+    function calculate() {
+      const freq = parseInt(document.getElementById("frequency").value);
+      const weeks = parseInt(document.getElementById("cycleWeeks").value);
+      const days = weeks * 7;
+      const compoundCount = parseInt(document.getElementById("compoundCount").value);
+
+      const resultBox = document.getElementById("resultBox");
+      resultBox.innerHTML = "";
+
+      const labels = Array.from({ length: days }, (_, i) => `Day ${i+1}`);
+      const datasets = [];
+
+      let totalWeekly = 0;
+      let totalInjection = 0;
+
+      for (let i = 0; i < compoundCount; i++) {
+        const name = document.getElementById(`compound_${i}`).value;
+        const customHL = parseFloat(document.getElementById(`halfLife_${i}`)?.value || 0);
+        const halfLife = name === "Custom" ? customHL : steroidData[name];
+
+        const dose = parseFloat(document.getElementById(`weeklyDose_${i}`).value);
+        const conc = parseFloat(document.getElementById(`concentration_${i}`).value);
+        const vial = parseFloat(document.getElementById(`vialSize_${i}`).value);
+
+        if (!halfLife || !dose || !conc || !vial) {
+          alert(`Please complete all fields for Compound ${i + 1}`);
+          return;
+        }
+
+        const weeklyML = dose / conc;
+        const perInjection = weeklyML / freq;
+        const totalML = weeklyML * weeks;
+        const vialsNeeded = totalML / vial;
+
+        totalWeekly += weeklyML;
+        totalInjection += perInjection;
+
+        resultBox.innerHTML += `
+          <strong>${name}</strong><br>
+          Weekly Volume: ${weeklyML.toFixed(2)}ml<br>
+          Per Injection: ${perInjection.toFixed(2)}ml<br>
+          Vials Needed: ${vialsNeeded.toFixed(1)}<br><br>
+        `;
+
+        const decayRate = Math.log(2) / halfLife;
+        const data = Array(days).fill(0);
+
+        for (let d = 0; d < days; d++) {
+          for (let inj = 0; inj <= d; inj += Math.floor(7 / freq)) {
+            const t = d - inj;
+            data[d] += perInjection * Math.exp(-decayRate * t * 24 / 1); // time in hours
+          }
+        }
+
+        datasets.push({
+          label: name,
+          data,
+          borderColor: getRandomColor(),
+          fill: false,
+          tension: 0.3
+        });
+      }
+
+      resultBox.innerHTML += `<hr><strong>Total Weekly Volume:</strong> ${totalWeekly.toFixed(2)}ml<br>`;
+      resultBox.innerHTML += `<strong>Total Per Injection Volume:</strong> ${totalInjection.toFixed(2)}ml<br>`;
+
+      if (chart) chart.destroy();
+
+      const ctx = document.getElementById("chart").getContext("2d");
+      chart = new Chart(ctx, {
+        type: "line",
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { labels: { color: "#f9f9f9" } },
+          },
+          scales: {
+            x: { ticks: { color: "#f9f9f9" }, title: { text: "Days", display: true, color: "#f9f9f9" }},
+            y: { ticks: { color: "#f9f9f9" }, title: { text: "Active Concentration", display: true, color: "#f9f9f9" }}
+          }
+        }
+      });
+    }
+
+    function getRandomColor() {
+      const r = Math.floor(Math.random() * 200);
+      const g = Math.floor(Math.random() * 200);
+      const b = Math.floor(Math.random() * 200);
+      return `rgb(${r},${g},${b})`;
+    }
+  </script>
+</body>
+</html>
