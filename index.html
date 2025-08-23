@@ -58,7 +58,7 @@
 <body>
   <div class="container">
     <h2>Injection Calculator + Blood Level Plotter</h2>
-    
+
     <label>Number of Compounds</label>
     <input type="number" id="compoundCount" value="1" min="1" max="10" onchange="renderCompounds()" />
 
@@ -67,9 +67,11 @@
     <label>Injection Frequency (per week)</label>
     <select id="frequency">
       <option value="7">Every day (7x/week)</option>
+      <option value="6">6x per week</option>
+      <option value="5">5x per week</option>
       <option value="4">Mon/Wed/Fri/Sun (4x)</option>
-      <option value="3">Every other day (~3x)</option>
-      <option value="2">Twice a week</option>
+      <option value="3">Every other day (~3-4x)</option>
+      <option value="2">Mon/Thu (2x)</option>
       <option value="1">Once a week</option>
     </select>
 
@@ -86,13 +88,49 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     const steroidData = {
-      "Testosterone Enanthate": 120,
-      "Testosterone Propionate": 48,
+      // Injectables
+      "Boldenone Cypionate": 144,
+      "Boldenone Undecylenate": 336,
+      "Dihydroboldenone Cypionate": 144,
+      "Drostanolone Enanthate": 120,
+      "Drostanolone Propionate": 48,
+      "Methandione Injectable": 6,
+      "Methyldrostanolone Injectable": 12,
+      "Methenolone Enanthate": 120,
+      "Methenolone Acetate": 4,
+      "Nandrolone Decanoate": 192,
+      "Nandrolone Phenylpropionate": 96,
+      "Stanozolol Suspension": 24,
+      "Testosterone Acetate": 48,
+      "Testosterone Base": 2,
       "Testosterone Cypionate": 144,
+      "Testosterone Decanoate": 192,
+      "Testosterone Enanthate": 120,
+      "Testosterone Isocaproate": 144,
+      "Testosterone Phenylpropionate": 96,
+      "Testosterone Propionate": 48,
+      "Testosterone Suspension": 24,
+      "Testosterone Undercanoate": 1000,
+      "Trestolone Acetate": 48,
+      "Trestolone Enanthate": 120,
       "Trenbolone Acetate": 48,
+      "Trenbolone Base": 6,
       "Trenbolone Enanthate": 120,
-      "Nandrolone Decanoate (Deca)": 192,
-      "Oxymetholone (Anadrol)": 8,
+      "Trenbolone Hexahydrobenzyl Carbonate": 144,
+
+      // Orals
+      "Chlordehydromethyltestosterone": 12,
+      "Fluoxymesterone Oral": 9,
+      "Methandione Oral": 4,
+      "Methyl-1-testosterone Oral": 4,
+      "Methyldrostanolone Oral": 6,
+      "Methylstenbolone Oral": 4,
+      "Metribolone Oral": 6,
+      "Oxandrolone Oral": 9,
+      "Oxymetholone Oral (Anadrol)": 8,
+      "Stanozolol Oral": 9,
+
+      // Custom
       "Custom": null
     };
 
@@ -104,12 +142,25 @@
       for (let i = 0; i < count; i++) {
         const div = document.createElement("div");
         div.classList.add("compound-block");
+
+        const injectableOptions = Object.entries(steroidData)
+          .filter(([name]) => !name.includes("Oral") && name !== "Custom")
+          .sort()
+          .map(([name, hl]) => `<option value="${name}">${name} (${hl}h)</option>`).join("");
+
+        const oralOptions = Object.entries(steroidData)
+          .filter(([name]) => name.includes("Oral"))
+          .sort()
+          .map(([name, hl]) => `<option value="${name}">${name} (${hl}h)</option>`).join("");
+
         div.innerHTML = `
           <label>Compound ${i + 1}</label>
           <select id="compound_${i}" onchange="toggleHalfLife(${i})">
-            ${Object.entries(steroidData).map(([name, hl]) =>
-              `<option value="${name}">${name}${hl ? ` (${hl}h)` : ""}</option>`
-            ).join("")}
+            <optgroup label="Injectables">${injectableOptions}</optgroup>
+            <optgroup label="Orals">${oralOptions}</optgroup>
+            <optgroup label="Custom">
+              <option value="Custom">Custom (enter manually)</option>
+            </optgroup>
           </select>
 
           <div id="customHL_${i}" style="display:none;">
@@ -132,8 +183,7 @@
 
     function toggleHalfLife(index) {
       const selected = document.getElementById(`compound_${index}`).value;
-      const customDiv = document.getElementById(`customHL_${index}`);
-      customDiv.style.display = selected === "Custom" ? "block" : "none";
+      document.getElementById(`customHL_${index}`).style.display = selected === "Custom" ? "block" : "none";
     }
 
     renderCompounds();
@@ -141,15 +191,15 @@
     let chart;
 
     function calculate() {
-      const freq = parseInt(document.getElementById("frequency").value);
-      const weeks = parseInt(document.getElementById("cycleWeeks").value);
+      const freq = parseFloat(document.getElementById("frequency").value);
+      const weeks = parseFloat(document.getElementById("cycleWeeks").value);
       const days = weeks * 7;
       const compoundCount = parseInt(document.getElementById("compoundCount").value);
 
       const resultBox = document.getElementById("resultBox");
       resultBox.innerHTML = "";
 
-      const labels = Array.from({ length: days }, (_, i) => `Day ${i+1}`);
+      const labels = Array.from({ length: days }, (_, i) => `Day ${i + 1}`);
       const datasets = [];
 
       let totalWeekly = 0;
@@ -190,7 +240,7 @@
         for (let d = 0; d < days; d++) {
           for (let inj = 0; inj <= d; inj += Math.floor(7 / freq)) {
             const t = d - inj;
-            data[d] += perInjection * Math.exp(-decayRate * t * 24 / 1); // time in hours
+            data[d] += perInjection * Math.exp(-decayRate * t * 24);
           }
         }
 
@@ -215,11 +265,17 @@
         options: {
           responsive: true,
           plugins: {
-            legend: { labels: { color: "#f9f9f9" } },
+            legend: { labels: { color: "#f9f9f9" } }
           },
           scales: {
-            x: { ticks: { color: "#f9f9f9" }, title: { text: "Days", display: true, color: "#f9f9f9" }},
-            y: { ticks: { color: "#f9f9f9" }, title: { text: "Active Concentration", display: true, color: "#f9f9f9" }}
+            x: {
+              ticks: { color: "#f9f9f9" },
+              title: { display: true, text: "Days", color: "#f9f9f9" }
+            },
+            y: {
+              ticks: { color: "#f9f9f9" },
+              title: { display: true, text: "Active Concentration", color: "#f9f9f9" }
+            }
           }
         }
       });
@@ -234,3 +290,4 @@
   </script>
 </body>
 </html>
+
