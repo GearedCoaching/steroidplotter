@@ -198,6 +198,169 @@
     }
 
     let chart;
+function calculate() {
+  const freq = parseFloat(document.getElementById("frequency").value);
+  const weeks = parseFloat(document.getElementById("cycleWeeks").value);
+  const baseDays = weeks * 7;
+  const compoundCount = parseInt(document.getElementById("compoundCount").value);
+
+  const resultBox = document.getElementById("resultBox");
+  resultBox.innerHTML = "";
+
+  let totalWeekly = 0;
+  let totalInjection = 0;
+  let totalOralTabsPerWeek = 0;
+  let totalOralTabsPerDay = 0;
+  let latestClr = 0;
+
+  const halfLives = Array.from({ length: compoundCount }, (_, i) => {
+    const name = document.getElementById(`compound_${i}`).value;
+    const custom = parseFloat(document.getElementById(`halfLife_${i}`)?.value || 0);
+    return name === "Custom" ? custom : steroidData[name];
+  });
+
+  const maxHL = Math.max(...halfLives);
+  const totalDays = baseDays + Math.ceil((maxHL * 7) / 24);
+  const labels = Array.from({ length: totalDays }, (_, i) => `Day ${i + 1}`);
+  const datasets = [];
+
+  for (let i = 0; i < compoundCount; i++) {
+    const name = document.getElementById(`compound_${i}`).value;
+    const halfLife = name === "Custom"
+      ? parseFloat(document.getElementById(`halfLife_${i}`).value)
+      : steroidData[name];
+    const dose = parseFloat(document.getElementById(`weeklyDose_${i}`).value);
+    if (!halfLife || !dose) {
+      return alert(`Complete all fields for compound ${i + 1}`);
+    }
+
+    let summaryHTML = `<strong>${name}</strong><br>`;
+    const decay = Math.log(2) / halfLife;
+    const data = Array(totalDays).fill(0);
+
+    if (name.includes("Oral")) {
+      const dosagePerTab = parseFloat(document.getElementById(`doseTab_${i}`).value);
+      const tabsPerBottle = parseFloat(document.getElementById(`tabsBottle_${i}`).value);
+      if (!dosagePerTab || !tabsPerBottle) {
+        return alert(`Fill dosage per tab and tabs per bottle for ${name}`);
+      }
+
+      const tabsPerWeek = dose / dosagePerTab;
+      const tabsPerDay = tabsPerWeek / freq;
+      const bottlesNeeded = (tabsPerWeek * weeks) / tabsPerBottle;
+
+      totalOralTabsPerWeek += tabsPerWeek;
+      totalOralTabsPerDay += tabsPerDay;
+
+      summaryHTML += `
+        Tabs/Week: ${tabsPerWeek.toFixed(1)}<br>
+        Tabs/Day: ${tabsPerDay.toFixed(2)}<br>
+        Bottles Needed: ${bottlesNeeded.toFixed(1)}<br>
+      `;
+
+      for (let d = 0; d < totalDays; d++) {
+        data[d] = d < baseDays
+          ? tabsPerDay * Math.pow(0.5, 24 * (d % (7 / freq)) / halfLife)
+          : data[d - 1] * Math.pow(0.5, 24 / halfLife);
+      }
+    } else {
+      const conc = parseFloat(document.getElementById(`concentration_${i}`).value);
+      const vial = parseFloat(document.getElementById(`vialSize_${i}`).value);
+      if (!conc || !vial) {
+        return alert(`Fill concentration and vial info for ${name}`);
+      }
+
+      const weeklyML = dose / conc;
+      const perInj = weeklyML / freq;
+      const totalML = weeklyML * weeks;
+      const vials = totalML / vial;
+
+      totalWeekly += weeklyML;
+      totalInjection += perInj;
+
+      summaryHTML += `
+        Weekly Volume: ${weeklyML.toFixed(2)}ml<br>
+        Per Injection: ${perInj.toFixed(2)}ml<br>
+        Vials Needed: ${vials.toFixed(1)}<br>
+      `;
+
+      for (let d = 0; d < totalDays; d++) {
+        data[d] = d < baseDays
+          ? Array.from({ length: Math.floor(d / (7 / freq)) + 1 }, (_, inj) =>
+              perInj * Math.exp(-decay * (d - inj * (7 / freq)) * 24)
+            ).reduce((a, b) => a + b, 0)
+          : data[d - 1] * Math.exp(-decay * 24);
+      }
+    }
+
+    const clr = data.findIndex(v => v < (name.includes("Oral")
+      ? (dose / parseFloat(document.getElementById(`doseTab_${i}`).value) * 0.01)
+      : (dose / steroidData[name] / freq * 0.01)));
+
+    const clearanceDay = clr < 0 ? totalDays : clr;
+    if (clearanceDay > latestClr) latestClr = clearanceDay;
+
+    const postWeeks = Math.max(0, Math.floor((clearanceDay + 1 - baseDays) / 7));
+    summaryHTML += `Clears Day ${clearanceDay + 1} (~${postWeeks} wks post cycle)<br><br>`;
+    resultBox.innerHTML += summaryHTML;
+
+    datasets.push({ label: name, data, borderColor: getRandomColor(), fill: false, tension: 0.3 });
+  }
+
+  const allPost = Math.max(0, Math.floor((latestClr + 1 - baseDays) / 7));
+  resultBox.innerHTML += `
+    <hr>
+    Total Weekly Injectable Volume: ${totalWeekly.toFixed(2)}ml<br>
+    Total Per Injection Volume: ${totalInjection.toFixed(2)}ml<br>
+    Total Weekly Oral Tabs: ${totalOralTabsPerWeek.toFixed(1)}<br>
+    Total Daily Oral Tabs: ${totalOralTabsPerDay.toFixed(2)}<br>
+    <strong>📦 All Clear By:</strong> Day ${latestClr + 1} (~${allPost} wks post cycle)<br>
+  `;
+
+  if (chart) chart.destroy();
+  const ctx = document.getElementById("chart").getContext("2d");
+
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color: "#f9f9f9" } },
+        annotation: {
+          annotations: {
+            pctLine: {
+              type: 'line',
+              scaleID: 'x',
+              value: labels[latestClr],
+              borderColor: '#e2a53e',
+              borderWidth: 2,
+              borderDash: [6, 6],
+              label: {
+                enabled: true,
+                content: '📍 PCT Start',
+                position: 'start',
+                backgroundColor: '#e2a53e',
+                color: '#1c1c1c',
+                font: { weight: 'bold' }
+              }
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: "#f9f9f9" },
+          title: { display: true, text: "Days", color: "#f9f9f9" }
+        },
+        y: {
+          ticks: { color: "#f9f9f9" },
+          title: { display: true, text: "Active Level", color: "#f9f9f9" }
+        }
+      }
+    }
+  });
+}
 
     // Include the final `calculate()` function from your latest post here…
     // I’ve already reviewed it and confirmed it works — just paste it under here ⬇
