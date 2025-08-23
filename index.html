@@ -73,7 +73,7 @@
       "Custom": null
     };
 
-function renderCompounds() {
+function renderCompounds(); {
   const container = document.getElementById("compoundContainer");
   const count = parseInt(document.getElementById("compoundCount").value);
   container.innerHTML = "";
@@ -82,17 +82,18 @@ function renderCompounds() {
     const div = document.createElement("div");
     div.className = "compound-block";
 
-    const injectableOptions = Object.entries(steroidData)
-      .filter(([k]) => !k.includes("Oral") && k !== "Custom")
-      .sort()
-      .map(([k, v]) => `<option value="${k}">${k} (${v}h)</option>`)
-      .join("");
+const injectableOptions = Object.entries(steroidData)
+  .filter(([name]) => !name.includes("Oral") && name !== "Custom")
+  .sort()
+  .map(([name, hl]) => `<option value="${name}">${name} (${hl}h)</option>`)
+  .join("");
 
-    const oralOptions = Object.entries(steroidData)
-      .filter(([k]) => k.includes("Oral"))
-      .sort()
-      .map(([k, v]) => `<option value="${k}">${k} (${v}h)</option>`)
-      .join("");
+const oralOptions = Object.entries(steroidData)
+  .filter(([name]) => name.includes("Oral"))
+  .sort()
+  .map(([name, hl]) => `<option value="${name}">${name} (${hl}h)</option>`)
+  .join("");
+
 
     div.innerHTML = `
       <label>Compound ${i + 1}</label>
