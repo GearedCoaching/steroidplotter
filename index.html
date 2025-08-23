@@ -3,49 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Steroid Injection Calculator + Plotter</title>
+  <title>Steroid Injection Calculator & Plotter</title>
   <style>
-    body {
-      background-color: #1c1c1c;
-      color: #f9f9f9;
-      font-family: sans-serif;
-      padding: 30px;
-    }
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      background: #1c1c1c;
-      border: 1px solid #7a7a7a;
-      border-radius: 10px;
-      padding: 20px;
-    }
-    label, input, select {
-      display: block;
-      width: 100%;
-      margin-top: 10px;
-    }
+    body { background: #1c1c1c; color: #f9f9f9; font-family: sans-serif; padding: 30px; }
+    .container { max-width: 900px; margin: auto; padding: 20px; background: #1c1c1c; border: 1px solid #7a7a7a; border-radius: 10px; }
+    label, input, select { display: block; width: 100%; margin-top: 10px; }
     input, select {
       padding: 8px;
       background: #111;
       border: 1px solid #7a7a7a;
-      color: #f9f9f9;
       border-radius: 5px;
+      color: #f9f9f9;
     }
     button {
-      background-color: #b73239;
-      color: white;
-      padding: 12px;
-      border: none;
-      border-radius: 25px;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 20px;
+      background: #b73239; color: white;
+      padding: 12px; border: none; border-radius: 25px;
+      font-weight: bold; cursor: pointer; margin-top: 20px;
     }
-    .compound-block {
-      border-top: 1px solid #7a7a7a;
-      padding-top: 15px;
-      margin-top: 20px;
-    }
+    .compound-block { border-top: 1px solid #7a7a7a; padding-top: 15px; margin-top: 20px; }
     .results {
       margin-top: 30px;
       padding: 20px;
@@ -57,7 +32,7 @@
 </head>
 <body>
   <div class="container">
-    <h2>Injection Calculator + Blood Level Plotter</h2>
+    <h2>Injection Calculator & Blood Level Plotter</h2>
 
     <label>Number of Compounds</label>
     <input type="number" id="compoundCount" value="1" min="1" max="10" onchange="renderCompounds()" />
@@ -70,8 +45,8 @@
       <option value="6">6x per week</option>
       <option value="5">5x per week</option>
       <option value="4">Mon/Wed/Fri/Sun (4x)</option>
-      <option value="3">Every other day (~3-4x)</option>
-      <option value="2">Mon/Thu (2x)</option>
+      <option value="3">Every other day (~3–4x)</option>
+      <option value="2">Twice a week (e.g. Mon/Thu)</option>
       <option value="1">Once a week</option>
     </select>
 
@@ -81,267 +56,201 @@
     <button onclick="calculate()">Calculate & Plot</button>
 
     <div class="results" id="resultBox"></div>
-
     <canvas id="chart" style="margin-top: 40px;"></canvas>
   </div>
 
+  <!-- Chart.js and Annotation Plugin -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0"></script>
   <script>
-  Chart.register(window['chartjs-plugin-annotation']);
-</script>
-
+    // ** Register annotation plugin **
+    Chart.register(window['chartjs-plugin-annotation']);
+  </script>
 
   <script>
     const steroidData = {
       // Injectables
-      "Boldenone Cypionate": 144,
-      "Boldenone Undecylenate": 336,
-      "Dihydroboldenone Cypionate": 144,
-      "Drostanolone Enanthate": 120,
-      "Drostanolone Propionate": 48,
-      "Methandione Injectable": 6,
-      "Methyldrostanolone Injectable": 12,
-      "Methenolone Enanthate": 120,
-      "Methenolone Acetate": 4,
-      "Nandrolone Decanoate": 192,
-      "Nandrolone Phenylpropionate": 96,
-      "Stanozolol Suspension": 24,
-      "Testosterone Acetate": 48,
-      "Testosterone Base": 2,
-      "Testosterone Cypionate": 144,
-      "Testosterone Decanoate": 192,
-      "Testosterone Enanthate": 120,
-      "Testosterone Isocaproate": 144,
-      "Testosterone Phenylpropionate": 96,
-      "Testosterone Propionate": 48,
-      "Testosterone Suspension": 24,
-      "Testosterone Undercanoate": 1000,
-      "Trestolone Acetate": 48,
-      "Trestolone Enanthate": 120,
-      "Trenbolone Acetate": 48,
-      "Trenbolone Base": 6,
-      "Trenbolone Enanthate": 120,
-      "Trenbolone Hexahydrobenzyl Carbonate": 144,
-
+      "Boldenone Cypionate": 144, "Boldenone Undecylenate": 336,
+      "Dihydroboldenone Cypionate": 144, "Drostanolone Enanthate": 120,
+      "Drostanolone Propionate": 48, "Methandione Injectable": 6,
+      "Methyldrostanolone Injectable": 12, "Methenolone Enanthate": 120,
+      "Methenolone Acetate": 4, "Nandrolone Decanoate": 192,
+      "Nandrolone Phenylpropionate": 96, "Stanozolol Suspension": 24,
+      "Testosterone Acetate": 48, "Testosterone Base": 2,
+      "Testosterone Cypionate": 144, "Testosterone Decanoate": 192,
+      "Testosterone Enanthate": 120, "Testosterone Isocaproate": 144,
+      "Testosterone Phenylpropionate": 96, "Testosterone Propionate": 48,
+      "Testosterone Suspension": 24, "Testosterone Undercanoate": 1000,
+      "Trestolone Acetate": 48, "Trestolone Enanthate": 120,
+      "Trenbolone Acetate": 48, "Trenbolone Base": 6,
+      "Trenbolone Enanthate": 120, "Trenbolone Hexahydrobenzyl Carbonate": 144,
       // Orals
-      "Chlordehydromethyltestosterone": 12,
-      "Fluoxymesterone Oral": 9,
-      "Methandione Oral": 4,
-      "Methyl-1-testosterone Oral": 4,
-      "Methyldrostanolone Oral": 6,
-      "Methylstenbolone Oral": 4,
-      "Metribolone Oral": 6,
-      "Oxandrolone Oral": 9,
-      "Oxymetholone Oral (Anadrol)": 8,
-      "Stanozolol Oral": 9,
-
+      "Chlordehydromethyltestosterone": 12, "Fluoxymesterone Oral": 9,
+      "Methandione Oral": 4, "Methyl-1-testosterone Oral": 4,
+      "Methyldrostanolone Oral": 6, "Methylstenbolone Oral": 4,
+      "Metribolone Oral": 6, "Oxandrolone Oral": 9,
+      "Oxymetholone Oral (Anadrol)": 8, "Stanozolol Oral": 9,
       // Custom
       "Custom": null
     };
 
     function renderCompounds() {
-      const count = parseInt(document.getElementById("compoundCount").value);
-      const container = document.getElementById("compoundContainer");
+      const container = document.getElementById("compoundContainer"),
+            count = parseInt(document.getElementById("compoundCount").value);
       container.innerHTML = "";
 
       for (let i = 0; i < count; i++) {
         const div = document.createElement("div");
-        div.classList.add("compound-block");
+        div.className = "compound-block";
 
-        const injectableOptions = Object.entries(steroidData)
-          .filter(([name]) => !name.includes("Oral") && name !== "Custom")
-          .sort()
-          .map(([name, hl]) => `<option value="${name}">${name} (${hl}h)</option>`).join("");
+        const injectables = Object.entries(steroidData)
+          .filter(([k]) => !k.includes("Oral") && k !== "Custom")
+          .sort((a,b) => a[0].localeCompare(b[0]))
+          .map(([k,v]) => `<option value="${k}">${k} (${v}h)</option>`).join("");
 
-        const oralOptions = Object.entries(steroidData)
-          .filter(([name]) => name.includes("Oral"))
-          .sort()
-          .map(([name, hl]) => `<option value="${name}">${name} (${hl}h)</option>`).join("");
+        const orals = Object.entries(steroidData)
+          .filter(([k]) => k.includes("Oral"))
+          .sort((a,b) => a[0].localeCompare(b[0]))
+          .map(([k,v]) => `<option value="${k}">${k} (${v}h)</option>`).join("");
 
         div.innerHTML = `
-          <label>Compound ${i + 1}</label>
+          <label>Compound ${i+1}</label>
           <select id="compound_${i}" onchange="toggleHalfLife(${i})">
-            <optgroup label="Injectables">${injectableOptions}</optgroup>
-            <optgroup label="Orals">${oralOptions}</optgroup>
-            <optgroup label="Custom">
-              <option value="Custom">Custom (enter manually)</option>
-            </optgroup>
+            <optgroup label="Injectables">${injectables}</optgroup>
+            <optgroup label="Orals">${orals}</optgroup>
+            <optgroup label="Custom"><option value="Custom">Custom (enter manually)</option></optgroup>
           </select>
-
           <div id="customHL_${i}" style="display:none;">
-            <label>Custom Half-Life (hours)</label>
+            <label>Custom Half‑Life (h)</label>
             <input type="number" id="halfLife_${i}" />
           </div>
-
-          <label>Weekly Dosage (mg)</label>
-          <input type="number" id="weeklyDose_${i}" />
-
-          <label>Concentration (mg/ml)</label>
-          <input type="number" id="concentration_${i}" />
-
-          <label>Vial Size (ml)</label>
-          <input type="number" id="vialSize_${i}" />
+          <label>Weekly Dose (mg)</label><input type="number" id="weeklyDose_${i}" />
+          <label>Concentration (mg/ml)</label><input type="number" id="concentration_${i}" />
+          <label>Vial Size (ml)</label><input type="number" id="vialSize_${i}" />
         `;
         container.appendChild(div);
       }
     }
 
-    function toggleHalfLife(index) {
-      const selected = document.getElementById(`compound_${index}`).value;
-      document.getElementById(`customHL_${index}`).style.display = selected === "Custom" ? "block" : "none";
+    function toggleHalfLife(i) {
+      const sel = document.getElementById(`compound_${i}`).value;
+      document.getElementById(`customHL_${i}`).style.display = sel === "Custom" ? "block" : "none";
     }
 
     renderCompounds();
 
     let chart;
 
- function calculate() {
-  const freq = parseFloat(document.getElementById("frequency").value);
-  const weeks = parseFloat(document.getElementById("cycleWeeks").value);
-  const baseDays = weeks * 7;
-  const compoundCount = parseInt(document.getElementById("compoundCount").value);
+    function calculate() {
+      const freq = parseFloat(document.getElementById("frequency").value),
+            weeks = parseFloat(document.getElementById("cycleWeeks").value),
+            baseDays = weeks * 7,
+            compoundCount = parseInt(document.getElementById("compoundCount").value),
+            labels = [],
+            datasets = [],
+            resultBox = document.getElementById("resultBox");
 
-  const resultBox = document.getElementById("resultBox");
-  resultBox.innerHTML = "";
+      resultBox.innerHTML = "";
 
-  const halfLives = Array.from({ length: compoundCount }, (_, i) => {
-    const name = document.getElementById(`compound_${i}`).value;
-    const customHL = parseFloat(document.getElementById(`halfLife_${i}`)?.value || 0);
-    return name === "Custom" ? customHL : steroidData[name];
-  });
-
-  const longestHalfLife = Math.max(...halfLives);
-  const totalDays = baseDays + Math.ceil((longestHalfLife * 7) / 24);
-  const labels = Array.from({ length: totalDays }, (_, i) => `Day ${i + 1}`);
-  const datasets = [];
-
-  let totalWeekly = 0;
-  let totalInjection = 0;
-  let latestClearance = 0;
-
-  for (let i = 0; i < compoundCount; i++) {
-    const name = document.getElementById(`compound_${i}`).value;
-    const customHL = parseFloat(document.getElementById(`halfLife_${i}`)?.value || 0);
-    const halfLife = name === "Custom" ? customHL : steroidData[name];
-
-    const dose = parseFloat(document.getElementById(`weeklyDose_${i}`).value);
-    const conc = parseFloat(document.getElementById(`concentration_${i}`).value);
-    const vial = parseFloat(document.getElementById(`vialSize_${i}`).value);
-
-    if (!halfLife || !dose || !conc || !vial) {
-      alert(`Please complete all fields for Compound ${i + 1}`);
-      return;
-    }
-
-    const weeklyML = dose / conc;
-    const perInjection = weeklyML / freq;
-    const totalML = weeklyML * weeks;
-    const vialsNeeded = totalML / vial;
-
-    totalWeekly += weeklyML;
-    totalInjection += perInjection;
-
-    const decayRate = Math.log(2) / halfLife;
-    const data = Array(totalDays).fill(0);
-
-    for (let d = 0; d < totalDays; d++) {
-      if (d < baseDays) {
-        for (let inj = 0; inj <= d; inj += Math.floor(7 / freq)) {
-          const t = d - inj;
-          data[d] += perInjection * Math.exp(-decayRate * t * 24);
-        }
-      } else {
-        data[d] = data[d - 1] * Math.exp(-decayRate * 24);
+      // Collect half-lives and compute max
+      const halfLives = [];
+      for (let i = 0; i < compoundCount; i++) {
+        const name = document.getElementById(`compound_${i}`).value;
+        const custom = parseFloat(document.getElementById(`halfLife_${i}`)?.value || 0);
+        halfLives.push(name === "Custom" ? custom : steroidData[name]);
       }
-    }
+      const maxHL = Math.max(...halfLives);
+      const totalDays = baseDays + Math.ceil((maxHL * 7) / 24);
 
-    let clearanceDay = data.findIndex((val) => val < (perInjection * 0.01));
-    if (clearanceDay === -1) clearanceDay = totalDays;
-    if (clearanceDay > latestClearance) latestClearance = clearanceDay;
+      for (let d = 0; d < totalDays; d++) labels.push(`Day ${d+1}`);
 
-    const postCycleDays = clearanceDay + 1 - baseDays;
-    const postCycleWeeks = Math.max(0, Math.floor(postCycleDays / 7));
+      let totalWeekly = 0, totalInjection = 0, latestClearance = 0;
 
-    resultBox.innerHTML += `
-      <strong>${name}</strong><br>
-      Weekly Volume: ${weeklyML.toFixed(2)}ml<br>
-      Per Injection: ${perInjection.toFixed(2)}ml<br>
-      Vials Needed: ${vialsNeeded.toFixed(1)}<br>
-      Clearance Estimate: Day ${clearanceDay + 1} (~${postCycleWeeks} weeks post cycle)<br><br>
-    `;
+      for (let i = 0; i < compoundCount; i++) {
+        const name = document.getElementById(`compound_${i}`).value;
+        const halfLife = name === "Custom" ? parseFloat(document.getElementById(`halfLife_${i}`).value) : steroidData[name];
+        const dose = parseFloat(document.getElementById(`weeklyDose_${i}`).value);
+        const conc = parseFloat(document.getElementById(`concentration_${i}`).value);
+        const vial = parseFloat(document.getElementById(`vialSize_${i}`).value);
 
-    datasets.push({
-      label: name,
-      data,
-      borderColor: getRandomColor(),
-      fill: false,
-      tension: 0.3
-    });
-  }
+        if (!halfLife || !dose || !conc || !vial) { return alert(`Fill all fields for compound ${i+1}`); }
 
-  const lastPostCycleWeeks = Math.max(0, Math.floor((latestClearance + 1 - baseDays) / 7));
-  resultBox.innerHTML += `<hr><strong>Total Weekly Volume:</strong> ${totalWeekly.toFixed(2)}ml<br>`;
-  resultBox.innerHTML += `<strong>Total Per Injection Volume:</strong> ${totalInjection.toFixed(2)}ml<br>`;
-  resultBox.innerHTML += `<strong>📅 All Compounds Cleared By:</strong> Day ${latestClearance + 1} (~${lastPostCycleWeeks} weeks post cycle)<br>`;
+        const weeklyML = dose / conc,
+              perInj = weeklyML / freq,
+              totalML = weeklyML * weeks,
+              vials = totalML / vial;
 
-  if (chart) chart.destroy();
+        totalWeekly += weeklyML;
+        totalInjection += perInj;
 
-  const ctx = document.getElementById("chart").getContext("2d");
-chart = new Chart(ctx, {
-  type: "line",
-  data: {
-    labels,
-    datasets: [...datasets]
-  },
-  options: {
-    responsive: true,
-    plugins: {
-      legend: { labels: { color: "#f9f9f9" } },
-      annotation: {
-        annotations: {
-          pctLine: {
-            type: 'line',
-            scaleID: 'x',
-            value: labels[latestClearance],
-            borderColor: '#e2a53e',
-            borderWidth: 2,
-            borderDash: [6, 6],
-            label: {
-              enabled: true,
-              content: '📍 PCT Start',
-              position: 'start',
-              backgroundColor: '#e2a53e',
-              color: '#1c1c1c',
-              font: {
-                weight: 'bold'
-              }
+        const decay = Math.log(2) / halfLife;
+        const data = Array(totalDays).fill(0);
+
+        for (let d = 0; d < totalDays; d++) {
+          if (d < baseDays) {
+            for (let inj = 0; inj <= d; inj += Math.floor(7 / freq)) {
+              data[d] += perInj * Math.exp(-decay * (d - inj) * 24);
             }
+          } else {
+            data[d] = data[d-1] * Math.exp(-decay * 24);
           }
         }
-      }
-    },
-    scales: {
-      x: {
-        ticks: { color: "#f9f9f9" },
-        title: { display: true, text: "Days", color: "#f9f9f9" }
-      },
-      y: {
-        ticks: { color: "#f9f9f9" },
-        title: { display: true, text: "Active Concentration", color: "#f9f9f9" }
-      }
-    }
-  }
-});
 
+        let clr = data.findIndex(v => v < perInj * 0.01);
+        clr = clr < 0 ? totalDays : clr;
+        if (clr > latestClearance) latestClearance = clr;
 
-    function getRandomColor() {
-      const r = Math.floor(Math.random() * 200);
-      const g = Math.floor(Math.random() * 200);
-      const b = Math.floor(Math.random() * 200);
-      return `rgb(${r},${g},${b})`;
+        const postDays = clr + 1 - baseDays,
+              postWeeks = Math.max(0, Math.floor(postDays / 7));
+
+        resultBox.innerHTML += `
+          <strong>${name}</strong><br>
+          Weekly Volume: ${weeklyML.toFixed(2)}ml<br>
+          Per Injection: ${perInj.toFixed(2)}ml<br>
+          Vials: ${vials.toFixed(1)}<br>
+          Clears Day: ${clr+1} (~${postWeeks} weeks post cycle)<br><br>
+        `;
+
+        datasets.push({ label: name, data, borderColor: getRandomColor(), fill: false, tension: 0.3 });
+      }
+
+      const postWeeksAll = Math.max(0, Math.floor((latestClearance + 1 - baseDays)/7));
+      resultBox.innerHTML += `<hr>Total Weekly: ${totalWeekly.toFixed(2)}ml<br>Total Per Injection: ${totalInjection.toFixed(2)}ml<br>`;
+      resultBox.innerHTML += `<strong>All Clear By:</strong> Day ${latestClearance+1} (~${postWeeksAll} weeks post cycle)<br>`;
+
+      if (chart) chart.destroy();
+
+      const ctx = document.getElementById("chart").getContext("2d");
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { labels: { color: "#f9f9f9" } },
+            annotation: {
+              annotations: {
+                pctLine: {
+                  type: 'line',
+                  scaleID: 'x',
+                  value: labels[latestClearance],
+                  borderColor: '#e2a53e',
+                  borderWidth: 2,
+                  borderDash: [6,6],
+                  label: { enabled: true, content: '📍PCT Start', position: 'start', backgroundColor: '#e2a53e', color: '#1c1c1c', font: { weight: 'bold' } }
+                }
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { color: '#f9f9f9' }, title: { display: true, text: 'Days', color: '#f9f9f9' } },
+            y: { ticks: { color: '#f9f9f9' }, title: { display: true, text: 'Active Level', color: '#f9f9f9' } }
+          }
+        }
+      });
     }
+
+    function getRandomColor() { const [r,g,b] = Array(3).fill().map(_ => Math.floor(Math.random()*200)); return `rgb(${r},${g},${b})`; }
   </script>
 </body>
 </html>
-
