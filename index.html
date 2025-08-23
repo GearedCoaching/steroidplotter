@@ -85,21 +85,29 @@
         const orals = Object.entries(steroidData).filter(([k]) => k.includes("Oral"))
           .sort((a,b) => a[0].localeCompare(b[0]))
           .map(([k,v]) => `<option value="${k}">${k} (${v}h)</option>`).join("");
-        div.innerHTML = `
-          <label>Compound ${i+1}</label>
-          <select id="compound_${i}" onchange="toggleHalfLife(${i})">
-            <optgroup label="Injectables">${injectables}</optgroup>
-            <optgroup label="Orals">${orals}</optgroup>
-            <optgroup label="Custom"><option value="Custom">Custom (enter manually)</option></optgroup>
-          </select>
-          <div id="customHL_${i}" style="display:none;">
-            <label>Custom Half‑Life (h)</label>
-            <input type="number" id="halfLife_${i}" />
-          </div>
-          <label>Weekly Dose (mg)</label><input type="number" id="weeklyDose_${i}" />
-          <label>Concentration (mg/ml)</label><input type="number" id="concentration_${i}" />
-          <label>Vial Size (ml)</label><input type="number" id="vialSize_${i}" />
-        `;
+        // ... binnen renderCompounds()
+div.innerHTML = `
+  <label>Compound ${i+1}</label>
+  <select id="compound_${i}" onchange="toggleHalfLife(${i})">
+    <optgroup label="Injectables">${injectables}</optgroup>
+    <optgroup label="Orals">${orals}</optgroup>
+    <optgroup label="Custom"><option value="Custom">Custom...</option></optgroup>
+  </select>
+
+  <div id="customHL_${i}" style="display:none;">
+    <label>Half-Life (h)</label><input type="number" id="halfLife_${i}" />
+  </div>
+
+  <label>Weekly Dose (mg)</label><input type="number" id="weeklyDose_${i}" />
+  ${
+    name.includes("Oral")
+      ? `<label>Dosage per Tab (mg)</label><input type="number" id="doseTab_${i}" />
+         <label>Tabs per Bottle</label><input type="number" id="tabsBottle_${i}" />`
+      : `<label>Concentration (mg/ml)</label><input type="number" id="concentration_${i}" />
+         <label>Vial Size (ml)</label><input type="number" id="vialSize_${i}" />`
+  }
+`;
+
         container.appendChild(div);
       }
     }
@@ -116,7 +124,12 @@
       const weeks = parseFloat(document.getElementById("cycleWeeks").value);
       const baseDays = weeks * 7;
       const compoundCount = parseInt(document.getElementById("compoundCount").value);
-      const resultBox = document.getElementById("resultBox");
+      const resultBox = document.getElementById("resultBox");  let totalWeekly = 0;
+  let totalInjection = 0;
+  let totalOralTabsPerWeek = 0;
+  let totalOralTabsPerDay = 0;
+  let latestClearance = 0;
+
       resultBox.innerHTML = "";
 
       const halfLives = Array.from({length:compoundCount}, (_, i) => {
@@ -130,30 +143,102 @@
       const datasets = [];
       let totalWeekly=0, totalInj=0, latestClr=0;
 
-      for (let i = 0; i < compoundCount; i++) {
-        const name = document.getElementById(`compound_${i}`).value;
-        const halfLife = name === "Custom" ? parseFloat(document.getElementById(`halfLife_${i}`).value) : steroidData[name];
-        const dose = parseFloat(document.getElementById(`weeklyDose_${i}`).value);
-        const conc = parseFloat(document.getElementById(`concentration_${i}`).value);
-        const vial = parseFloat(document.getElementById(`vialSize_${i}`).value);
-        if (!halfLife || !dose|| !conc|| !vial) return alert(`Complete all fields for compound ${i+1}`);
-        const weeklyML = dose / conc, perInj = weeklyML / freq, totalML = weeklyML * weeks, vials = totalML / vial;
-        totalWeekly += weeklyML; totalInj += perInj;
-        const decay = Math.log(2) / halfLife, data = Array(totalDays).fill(0);
-        for (let d=0; d<totalDays; d++){
-          data[d] = d < baseDays
-            ? Array.from({length: Math.floor(d/(7/freq))+1}, (_, inj) => perInj * Math.exp(-decay*(d-inj*((7/freq)))*24)).reduce((a,b)=>a+b,0)
-            : data[d-1]*Math.exp(-decay*24);
-        }
-        let clr = data.findIndex(v=>v < perInj*0.01);
-        clr = clr < 0 ? totalDays : clr;
-        if (clr > latestClr) latestClr = clr;
-        const postWeeks = Math.max(0, Math.floor((clr+1-baseDays)/7));
-        resultBox.innerHTML += `<strong>${name}</strong><br>Weekly: ${weeklyML.toFixed(2)}ml<br>Per Inj: ${perInj.toFixed(2)}ml<br>Vials: ${vials.toFixed(1)}<br>Clears Day ${clr+1} (~${postWeeks} wks post cycle)<br><br>`;
-        datasets.push({label:name, data, borderColor:getRandomColor(), fill:false, tension:0.3});
-      }
+for (let i = 0; i < compoundCount; i++) {
+  const name = document.getElementById(`compound_${i}`).value;
+  const customHL = parseFloat(document.getElementById(`halfLife_${i}`)?.value || 0);
+  const halfLife = name === "Custom" ? customHL : steroidData[name];
+
+  const dose = parseFloat(document.getElementById(`weeklyDose_${i}`).value);
+
+  if (!halfLife || !dose) {
+    alert(`Vul alle velden in voor Compound ${i + 1}`);
+    return;
+  }
+
+  const decayRate = Math.log(2) / halfLife;
+  const data = Array(totalDays).fill(0);
+  let compoundSummary = `<strong>${name}</strong><br>`;
+
+  if (name.includes("Oral")) {
+    const dosagePerTab = parseFloat(document.getElementById(`doseTab_${i}`).value);
+    const tabsPerBottle = parseFloat(document.getElementById(`tabsBottle_${i}`).value);
+    if (!dosagePerTab || !tabsPerBottle) {
+      alert(`Vul dosering per tablet en aantal tabletten per fles voor ${name} in`);
+      return;
+    }
+
+    const tabsPerWeek = dose / dosagePerTab;
+    const tabsPerDay = tabsPerWeek / freq;
+    const bottlesNeeded = (tabsPerWeek * weeks) / tabsPerBottle;
+totalOralTabsPerWeek += tabsPerWeek;
+totalOralTabsPerDay += tabsPerDay;
+
+    totalInjection += tabsPerDay;
+
+    compoundSummary += `
+      Tabs per Week: ${tabsPerWeek.toFixed(1)}<br>
+      Tabs per Day: ${tabsPerDay.toFixed(2)}<br>
+      Bottles Needed: ${bottlesNeeded.toFixed(1)}<br>
+    `;
+
+    for (let d = 0; d < totalDays; d++) {
+      data[d] = d < baseDays
+        ? tabsPerDay * Math.pow(0.5, (d % (7 / freq)) * 24 / halfLife)
+        : data[d - 1] * Math.pow(0.5, 24 / halfLife);
+    }
+
+  } else {
+    const conc = parseFloat(document.getElementById(`concentration_${i}`).value);
+    const vial = parseFloat(document.getElementById(`vialSize_${i}`).value);
+    if (!conc || !vial) {
+      alert(`Vul concentratie en vial size in voor ${name}`);
+      return;
+    }
+
+    const weeklyML = dose / conc;
+    const perInjection = weeklyML / freq;
+    const totalML = weeklyML * weeks;
+    const vialsNeeded = totalML / vial;
+
+    totalWeekly += weeklyML;
+    totalInjection += perInjection;
+
+    compoundSummary += `
+      Weekly Volume: ${weeklyML.toFixed(2)}ml<br>
+      Per Injection: ${perInjection.toFixed(2)}ml<br>
+      Vials Needed: ${vialsNeeded.toFixed(1)}<br>
+    `;
+
+    for (let d = 0; d < totalDays; d++) {
+      data[d] = d < baseDays
+        ? Array.from({length: Math.floor(d/(7/freq))+1}, (_, inj) => perInjection * Math.exp(-decayRate*(d-inj*((7/freq)))*24)).reduce((a,b)=>a+b,0)
+        : data[d - 1] * Math.exp(-decayRate * 24);
+    }
+  }
+
+  const clearanceDay = data.findIndex(val => val < 0.01);
+  const postCycleWeeks = Math.max(0, Math.floor((clearanceDay + 1 - baseDays) / 7));
+  compoundSummary += `Clearance Estimate: Day ${clearanceDay + 1} (~${postCycleWeeks} weeks post cycle)<br><br>`;
+
+  resultBox.innerHTML += compoundSummary;
+
+  datasets.push({
+    label: name,
+    data,
+    borderColor: getRandomColor(),
+    fill: false,
+    tension: 0.3
+  });
+
+  if (clearanceDay > latestClearance) latestClearance = clearanceDay;
+}
+
       const allPost = Math.max(0, Math.floor((latestClr+1-baseDays)/7));
-      resultBox.innerHTML += `<hr>Total Weekly: ${totalWeekly.toFixed(2)}ml<br>Total Per Inj: ${totalInj.toFixed(2)}ml<br><strong>All Clear By:</strong> Day ${latestClr+1} (~${allPost} wks post cycle)<br>`;
+      resultBox.innerHTML += `<hr>Total Weekly Injectable Volume: ${totalWeekly.toFixed(2)}ml
+<br>Total Per Inj: ${totalInj.toFixed(2)}ml<br>Total Weekly Oral Tabs: ${totalOralTabsPerWeek.toFixed(1)}<br>
+Total Daily Oral Tabs: ${totalOralTabsPerDay.toFixed(2)}<br>
+
+<br><strong>All Clear By:</strong> Day ${latestClr+1} (~${allPost} wks post cycle)<br>`;
 
       if(chart) chart.destroy();
       const ctx = document.getElementById("chart").getContext("2d");
