@@ -190,7 +190,7 @@
 
     let chart;
 
-  function calculate() {
+ function calculate() {
   const freq = parseFloat(document.getElementById("frequency").value);
   const weeks = parseFloat(document.getElementById("cycleWeeks").value);
   const baseDays = weeks * 7;
@@ -254,12 +254,15 @@
     if (clearanceDay === -1) clearanceDay = totalDays;
     if (clearanceDay > latestClearance) latestClearance = clearanceDay;
 
+    const postCycleDays = clearanceDay + 1 - baseDays;
+    const postCycleWeeks = Math.max(0, Math.floor(postCycleDays / 7));
+
     resultBox.innerHTML += `
       <strong>${name}</strong><br>
       Weekly Volume: ${weeklyML.toFixed(2)}ml<br>
       Per Injection: ${perInjection.toFixed(2)}ml<br>
       Vials Needed: ${vialsNeeded.toFixed(1)}<br>
-      Clearance Estimate: Day ${clearanceDay + 1} (~${Math.floor((clearanceDay + 1) / 7)} weeks post cycle)<br><br>
+      Clearance Estimate: Day ${clearanceDay + 1} (~${postCycleWeeks} weeks post cycle)<br><br>
     `;
 
     datasets.push({
@@ -271,9 +274,10 @@
     });
   }
 
+  const lastPostCycleWeeks = Math.max(0, Math.floor((latestClearance + 1 - baseDays) / 7));
   resultBox.innerHTML += `<hr><strong>Total Weekly Volume:</strong> ${totalWeekly.toFixed(2)}ml<br>`;
   resultBox.innerHTML += `<strong>Total Per Injection Volume:</strong> ${totalInjection.toFixed(2)}ml<br>`;
-  resultBox.innerHTML += `<strong>📅 All Compounds Cleared By:</strong> Day ${latestClearance + 1} (~${Math.floor((latestClearance + 1) / 7)} weeks post cycle)<br>`;
+  resultBox.innerHTML += `<strong>📅 All Compounds Cleared By:</strong> Day ${latestClearance + 1} (~${lastPostCycleWeeks} weeks post cycle)<br>`;
 
   if (chart) chart.destroy();
 
@@ -286,12 +290,14 @@
         ...datasets,
         {
           label: "📍 PCT Start",
-          data: Array.from({ length: labels.length }, (_, i) => i === latestClearance ? Math.max(...datasets.flatMap(d => d.data)) : null),
+          data: Array.from({ length: labels.length }, (_, i) =>
+            i === latestClearance ? Math.max(...datasets.flatMap(d => d.data)) : null
+          ),
           borderColor: "#e2a53e",
           borderWidth: 2,
           borderDash: [10, 5],
           pointRadius: 0,
-          fill: false,
+          fill: false
         }
       ]
     },
@@ -313,8 +319,6 @@
     }
   });
 }
-
-
 
     function getRandomColor() {
       const r = Math.floor(Math.random() * 200);
