@@ -190,96 +190,131 @@
 
     let chart;
 
-    function calculate() {
-      const freq = parseFloat(document.getElementById("frequency").value);
-      const weeks = parseFloat(document.getElementById("cycleWeeks").value);
-      const days = weeks * 7;
-      const compoundCount = parseInt(document.getElementById("compoundCount").value);
+  function calculate() {
+  const freq = parseFloat(document.getElementById("frequency").value);
+  const weeks = parseFloat(document.getElementById("cycleWeeks").value);
+  const baseDays = weeks * 7;
+  const compoundCount = parseInt(document.getElementById("compoundCount").value);
 
-      const resultBox = document.getElementById("resultBox");
-      resultBox.innerHTML = "";
+  const resultBox = document.getElementById("resultBox");
+  resultBox.innerHTML = "";
 
-      const labels = Array.from({ length: days }, (_, i) => `Day ${i + 1}`);
-      const datasets = [];
+  const halfLives = Array.from({ length: compoundCount }, (_, i) => {
+    const name = document.getElementById(`compound_${i}`).value;
+    const customHL = parseFloat(document.getElementById(`halfLife_${i}`)?.value || 0);
+    return name === "Custom" ? customHL : steroidData[name];
+  });
 
-      let totalWeekly = 0;
-      let totalInjection = 0;
+  const longestHalfLife = Math.max(...halfLives);
+  const totalDays = baseDays + Math.ceil((longestHalfLife * 7) / 24);
+  const labels = Array.from({ length: totalDays }, (_, i) => `Day ${i + 1}`);
+  const datasets = [];
 
-      for (let i = 0; i < compoundCount; i++) {
-        const name = document.getElementById(`compound_${i}`).value;
-        const customHL = parseFloat(document.getElementById(`halfLife_${i}`)?.value || 0);
-        const halfLife = name === "Custom" ? customHL : steroidData[name];
+  let totalWeekly = 0;
+  let totalInjection = 0;
+  let latestClearance = 0;
 
-        const dose = parseFloat(document.getElementById(`weeklyDose_${i}`).value);
-        const conc = parseFloat(document.getElementById(`concentration_${i}`).value);
-        const vial = parseFloat(document.getElementById(`vialSize_${i}`).value);
+  for (let i = 0; i < compoundCount; i++) {
+    const name = document.getElementById(`compound_${i}`).value;
+    const customHL = parseFloat(document.getElementById(`halfLife_${i}`)?.value || 0);
+    const halfLife = name === "Custom" ? customHL : steroidData[name];
 
-        if (!halfLife || !dose || !conc || !vial) {
-          alert(`Please complete all fields for Compound ${i + 1}`);
-          return;
-        }
+    const dose = parseFloat(document.getElementById(`weeklyDose_${i}`).value);
+    const conc = parseFloat(document.getElementById(`concentration_${i}`).value);
+    const vial = parseFloat(document.getElementById(`vialSize_${i}`).value);
 
-        const weeklyML = dose / conc;
-        const perInjection = weeklyML / freq;
-        const totalML = weeklyML * weeks;
-        const vialsNeeded = totalML / vial;
-
-        totalWeekly += weeklyML;
-        totalInjection += perInjection;
-
-        resultBox.innerHTML += `
-          <strong>${name}</strong><br>
-          Weekly Volume: ${weeklyML.toFixed(2)}ml<br>
-          Per Injection: ${perInjection.toFixed(2)}ml<br>
-          Vials Needed: ${vialsNeeded.toFixed(1)}<br><br>
-        `;
-
-        const decayRate = Math.log(2) / halfLife;
-        const data = Array(days).fill(0);
-
-        for (let d = 0; d < days; d++) {
-          for (let inj = 0; inj <= d; inj += Math.floor(7 / freq)) {
-            const t = d - inj;
-            data[d] += perInjection * Math.exp(-decayRate * t * 24);
-          }
-        }
-
-        datasets.push({
-          label: name,
-          data,
-          borderColor: getRandomColor(),
-          fill: false,
-          tension: 0.3
-        });
-      }
-
-      resultBox.innerHTML += `<hr><strong>Total Weekly Volume:</strong> ${totalWeekly.toFixed(2)}ml<br>`;
-      resultBox.innerHTML += `<strong>Total Per Injection Volume:</strong> ${totalInjection.toFixed(2)}ml<br>`;
-
-      if (chart) chart.destroy();
-
-      const ctx = document.getElementById("chart").getContext("2d");
-      chart = new Chart(ctx, {
-        type: "line",
-        data: { labels, datasets },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { labels: { color: "#f9f9f9" } }
-          },
-          scales: {
-            x: {
-              ticks: { color: "#f9f9f9" },
-              title: { display: true, text: "Days", color: "#f9f9f9" }
-            },
-            y: {
-              ticks: { color: "#f9f9f9" },
-              title: { display: true, text: "Active Concentration", color: "#f9f9f9" }
-            }
-          }
-        }
-      });
+    if (!halfLife || !dose || !conc || !vial) {
+      alert(`Please complete all fields for Compound ${i + 1}`);
+      return;
     }
+
+    const weeklyML = dose / conc;
+    const perInjection = weeklyML / freq;
+    const totalML = weeklyML * weeks;
+    const vialsNeeded = totalML / vial;
+
+    totalWeekly += weeklyML;
+    totalInjection += perInjection;
+
+    const decayRate = Math.log(2) / halfLife;
+    const data = Array(totalDays).fill(0);
+
+    for (let d = 0; d < totalDays; d++) {
+      if (d < baseDays) {
+        for (let inj = 0; inj <= d; inj += Math.floor(7 / freq)) {
+          const t = d - inj;
+          data[d] += perInjection * Math.exp(-decayRate * t * 24);
+        }
+      } else {
+        data[d] = data[d - 1] * Math.exp(-decayRate * 24);
+      }
+    }
+
+    let clearanceDay = data.findIndex((val) => val < (perInjection * 0.01));
+    if (clearanceDay === -1) clearanceDay = totalDays;
+    if (clearanceDay > latestClearance) latestClearance = clearanceDay;
+
+    resultBox.innerHTML += `
+      <strong>${name}</strong><br>
+      Weekly Volume: ${weeklyML.toFixed(2)}ml<br>
+      Per Injection: ${perInjection.toFixed(2)}ml<br>
+      Vials Needed: ${vialsNeeded.toFixed(1)}<br>
+      Clearance Estimate: Day ${clearanceDay + 1} (~${Math.floor((clearanceDay + 1) / 7)} weeks post cycle)<br><br>
+    `;
+
+    datasets.push({
+      label: name,
+      data,
+      borderColor: getRandomColor(),
+      fill: false,
+      tension: 0.3
+    });
+  }
+
+  resultBox.innerHTML += `<hr><strong>Total Weekly Volume:</strong> ${totalWeekly.toFixed(2)}ml<br>`;
+  resultBox.innerHTML += `<strong>Total Per Injection Volume:</strong> ${totalInjection.toFixed(2)}ml<br>`;
+  resultBox.innerHTML += `<strong>📅 All Compounds Cleared By:</strong> Day ${latestClearance + 1} (~${Math.floor((latestClearance + 1) / 7)} weeks post cycle)<br>`;
+
+  if (chart) chart.destroy();
+
+  const ctx = document.getElementById("chart").getContext("2d");
+  chart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        ...datasets,
+        {
+          label: "📍 PCT Start",
+          data: Array.from({ length: labels.length }, (_, i) => i === latestClearance ? Math.max(...datasets.flatMap(d => d.data)) : null),
+          borderColor: "#e2a53e",
+          borderWidth: 2,
+          borderDash: [10, 5],
+          pointRadius: 0,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color: "#f9f9f9" } }
+      },
+      scales: {
+        x: {
+          ticks: { color: "#f9f9f9" },
+          title: { display: true, text: "Days", color: "#f9f9f9" }
+        },
+        y: {
+          ticks: { color: "#f9f9f9" },
+          title: { display: true, text: "Active Concentration", color: "#f9f9f9" }
+        }
+      }
+    }
+  });
+}
+
+
 
     function getRandomColor() {
       const r = Math.floor(Math.random() * 200);
