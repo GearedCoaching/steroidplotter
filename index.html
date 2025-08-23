@@ -86,6 +86,8 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0"></script>
+
   <script>
     const steroidData = {
       // Injectables
@@ -282,43 +284,52 @@
   if (chart) chart.destroy();
 
   const ctx = document.getElementById("chart").getContext("2d");
-  chart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels,
-      datasets: [
-        ...datasets,
-        {
-          label: "📍 PCT Start",
-          data: Array.from({ length: labels.length }, (_, i) =>
-            i === latestClearance ? Math.max(...datasets.flatMap(d => d.data)) : null
-          ),
-          borderColor: "#e2a53e",
-          borderWidth: 2,
-          borderDash: [10, 5],
-          pointRadius: 0,
-          fill: false
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { labels: { color: "#f9f9f9" } }
-      },
-      scales: {
-        x: {
-          ticks: { color: "#f9f9f9" },
-          title: { display: true, text: "Days", color: "#f9f9f9" }
-        },
-        y: {
-          ticks: { color: "#f9f9f9" },
-          title: { display: true, text: "Active Concentration", color: "#f9f9f9" }
+chart = new Chart(ctx, {
+  type: "line",
+  data: {
+    labels,
+    datasets: [...datasets]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { labels: { color: "#f9f9f9" } },
+      annotation: {
+        annotations: {
+          pctLine: {
+            type: 'line',
+            scaleID: 'x',
+            value: labels[latestClearance],
+            borderColor: '#e2a53e',
+            borderWidth: 2,
+            borderDash: [6, 6],
+            label: {
+              enabled: true,
+              content: '📍 PCT Start',
+              position: 'start',
+              backgroundColor: '#e2a53e',
+              color: '#1c1c1c',
+              font: {
+                weight: 'bold'
+              }
+            }
+          }
         }
       }
+    },
+    scales: {
+      x: {
+        ticks: { color: "#f9f9f9" },
+        title: { display: true, text: "Days", color: "#f9f9f9" }
+      },
+      y: {
+        ticks: { color: "#f9f9f9" },
+        title: { display: true, text: "Active Concentration", color: "#f9f9f9" }
+      }
     }
-  });
-}
+  }
+});
+
 
     function getRandomColor() {
       const r = Math.floor(Math.random() * 200);
