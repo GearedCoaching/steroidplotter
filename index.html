@@ -3,21 +3,61 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Steroid Calculator & Plotter</title>
+  <title>Steroid Calculator + Plotter</title>
   <style>
-    body { background: #1c1c1c; color: #f9f9f9; font-family: sans-serif; padding: 30px; }
-    .container { max-width: 900px; margin: auto; padding: 20px; background: #1c1c1c; border: 1px solid #7a7a7a; border-radius: 10px; }
-    label, input, select { display: block; width: 100%; margin-top: 10px; }
-    input, select { padding: 8px; background: #111; border: 1px solid #7a7a7a; border-radius: 5px; color: #f9f9f9; }
-    button { background: #b73239; color: white; padding: 12px; border: none; border-radius: 25px; font-weight: bold; cursor: pointer; margin-top: 20px; }
-    .compound-block { border-top: 1px solid #7a7a7a; padding-top: 15px; margin-top: 20px; }
-    .results { margin-top: 30px; padding: 20px; background: #111; border: 1px solid #7a7a7a; border-radius: 10px; }
+    body {
+      background-color: #1c1c1c;
+      color: #f9f9f9;
+      font-family: sans-serif;
+      padding: 30px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #1c1c1c;
+      border: 1px solid #7a7a7a;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    label, input, select {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+    }
+    input, select {
+      padding: 8px;
+      background: #111;
+      border: 1px solid #7a7a7a;
+      color: #f9f9f9;
+      border-radius: 5px;
+    }
+    button {
+      background-color: #b73239;
+      color: white;
+      padding: 12px;
+      border: none;
+      border-radius: 25px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .compound-block {
+      border-top: 1px solid #7a7a7a;
+      padding-top: 15px;
+      margin-top: 20px;
+    }
+    .results {
+      margin-top: 30px;
+      padding: 20px;
+      background: #111;
+      border-radius: 10px;
+      border: 1px solid #7a7a7a;
+    }
   </style>
 </head>
 <body>
-
   <div class="container">
-    <h2>Injection Calculator & Blood Level Plotter</h2>
+    <h2>Steroid Injection Calculator + Plotter</h2>
 
     <label>Number of Compounds</label>
     <input type="number" id="compoundCount" value="1" min="1" max="10" onchange="renderCompounds()" />
@@ -26,12 +66,12 @@
 
     <label>Injection Frequency (per week)</label>
     <select id="frequency">
-      <option value="7">Every day (7x)</option>
-      <option value="6">6x</option>
-      <option value="5">5x</option>
-      <option value="4">4x (Mon/Wed/Fri/Sun)</option>
+      <option value="7">Every day (7x/week)</option>
+      <option value="6">6x per week</option>
+      <option value="5">5x per week</option>
+      <option value="4">Mon/Wed/Fri/Sun (4x)</option>
       <option value="3">Every other day (~3x)</option>
-      <option value="2">2x (e.g. Mon/Thu)</option>
+      <option value="2">Twice a week</option>
       <option value="1">Once a week</option>
     </select>
 
@@ -40,261 +80,127 @@
 
     <button onclick="calculate()">Calculate & Plot</button>
 
-    <div id="resultBox" class="results"></div>
+    <div class="results" id="resultBox"></div>
+
     <canvas id="chart" style="margin-top: 40px;"></canvas>
   </div>
 
-  <!-- Chart.js and Annotation plugin -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0"></script>
   <script>
-    // Must register the annotation plugin for it to take effect
-    Chart.register(window['chartjs-plugin-annotation']);
-  </script>
-
-  <script>
     const steroidData = {
-      "Boldenone Cypionate": 144, "Boldenone Undecylenate": 336, "Dihydroboldenone Cypionate": 144,
-      "Drostanolone Enanthate": 120, "Drostanolone Propionate": 48, "Methandione Injectable": 6,
-      "Methyldrostanolone Injectable": 12, "Methenolone Enanthate": 120, 
-      "Nandrolone Decanoate": 192, "Nandrolone Phenylpropionate": 96, "Stanozolol Suspension": 24,
-      "Testosterone Acetate": 48, "Testosterone Base": 2, "Testosterone Cypionate": 144,
-      "Testosterone Decanoate": 192, "Testosterone Enanthate": 120, "Testosterone Isocaproate": 144,
-      "Testosterone Phenylpropionate": 96, "Testosterone Propionate": 48, "Testosterone Suspension": 24,
-      "Testosterone Undercanoate": 1000, "Trestolone Acetate": 48, "Trestolone Enanthate": 120,
-      "Trenbolone Acetate": 48, "Trenbolone Base": 6, "Trenbolone Enanthate": 120,
+      "Boldenone Cypionate": 144,
+      "Boldenone Undecylenate": 336,
+      "Dihydroboldenone Cypionate": 144,
+      "Drostanolone Enanthate": 120,
+      "Drostanolone Propionate": 48,
+      "Methandione Injectable": 6,
+      "Methyldrostanolone Injectable": 12,
+      "Methenolone Enanthate": 120,
+      "Methenolone Acetate": 4,
+      "Nandrolone Decanoate": 192,
+      "Nandrolone Phenylpropionate": 96,
+      "Stanozolol Suspension": 24,
+      "Testosterone Acetate": 48,
+      "Testosterone Base": 2,
+      "Testosterone Cypionate": 144,
+      "Testosterone Decanoate": 192,
+      "Testosterone Enanthate": 120,
+      "Testosterone Isocaproate": 144,
+      "Testosterone Phenylpropionate": 96,
+      "Testosterone Propionate": 48,
+      "Testosterone Suspension": 24,
+      "Testosterone Undercanoate": 1000,
+      "Trestolone Acetate": 48,
+      "Trestolone Enanthate": 120,
+      "Trenbolone Acetate": 48,
+      "Trenbolone Base": 6,
+      "Trenbolone Enanthate": 120,
       "Trenbolone Hexahydrobenzyl Carbonate": 144,
-
-      "Chlordehydromethyltestosterone": 12, "Fluoxymesterone Oral": 9, "Methandione Oral": 4,
-      "Methyl-1-testosterone Oral": 4, "Methyldrostanolone Oral": 6, "Methylstenbolone Oral": 4,
-      "Metribolone Oral": 6, "Oxandrolone Oral": 9, "Oxymetholone Oral (Anadrol)": 8,
-      "Stanozolol Oral": 9,"Methenolone Oral": 4,
-
+      "Chlordehydromethyltestosterone": 12,
+      "Fluoxymesterone Oral": 9,
+      "Methandione Oral": 4,
+      "Methyl-1-testosterone Oral": 4,
+      "Methyldrostanolone Oral": 6,
+      "Methylstenbolone Oral": 4,
+      "Metribolone Oral": 6,
+      "Oxandrolone Oral": 9,
+      "Oxymetholone Oral (Anadrol)": 8,
+      "Stanozolol Oral": 9,
       "Custom": null
     };
 
-function renderCompounds(); {
-  const container = document.getElementById("compoundContainer");
-  const count = parseInt(document.getElementById("compoundCount").value);
-  container.innerHTML = "";
+    function renderCompounds() {
+      const count = parseInt(document.getElementById("compoundCount").value);
+      const container = document.getElementById("compoundContainer");
+      container.innerHTML = "";
 
-  for (let i = 0; i < count; i++) {
-    const div = document.createElement("div");
-    div.className = "compound-block";
+      const injectableOptions = Object.entries(steroidData)
+        .filter(([n]) => !n.includes("Oral") && n !== "Custom")
+        .sort().map(([n, h]) => `<option value="${n}">${n} (${h}h)</option>`).join("");
 
-const injectableOptions = Object.entries(steroidData)
-  .filter(([name]) => !name.includes("Oral") && name !== "Custom")
-  .sort()
-  .map(([name, hl]) => `<option value="${name}">${name} (${hl}h)</option>`)
-  .join("");
+      const oralOptions = Object.entries(steroidData)
+        .filter(([n]) => n.includes("Oral"))
+        .sort().map(([n, h]) => `<option value="${n}">${n} (${h}h)</option>`).join("");
 
-const oralOptions = Object.entries(steroidData)
-  .filter(([name]) => name.includes("Oral"))
-  .sort()
-  .map(([name, hl]) => `<option value="${name}">${name} (${hl}h)</option>`)
-  .join("");
+      for (let i = 0; i < count; i++) {
+        const div = document.createElement("div");
+        div.classList.add("compound-block");
+        div.innerHTML = `
+          <label>Compound ${i + 1}</label>
+          <select id="compound_${i}" onchange="toggleHalfLife(${i})">
+            <optgroup label="Injectables">${injectableOptions}</optgroup>
+            <optgroup label="Orals">${oralOptions}</optgroup>
+            <optgroup label="Custom"><option value="Custom">Custom</option></optgroup>
+          </select>
 
+          <div id="customHL_${i}" style="display:none;">
+            <label>Custom Half-Life (hours)</label>
+            <input type="number" id="halfLife_${i}" />
+          </div>
 
-    div.innerHTML = `
-      <label>Compound ${i + 1}</label>
-      <select id="compound_${i}" onchange="toggleHalfLife(${i})">
-        <optgroup label="Injectables">${injectableOptions}</optgroup>
-        <optgroup label="Orals">${oralOptions}</optgroup>
-        <optgroup label="Custom"><option value="Custom">Custom (enter manually)</option></optgroup>
-      </select>
+          <label>Weekly Dose (mg)</label>
+          <input type="number" id="weeklyDose_${i}" />
 
-      <div id="customHL_${i}" style="display:none;">
-        <label>Custom Half-Life (hours)</label>
-        <input type="number" id="halfLife_${i}" />
-      </div>
+          <div id="injectableFields_${i}">
+            <label>Concentration (mg/ml)</label>
+            <input type="number" id="concentration_${i}" />
+            <label>Vial Size (ml)</label>
+            <input type="number" id="vialSize_${i}" />
+          </div>
 
-      <label>Weekly Dose (mg)</label>
-      <input type="number" id="weeklyDose_${i}" />
-
-      <div id="injectableFields_${i}">
-        <label>Concentration (mg/ml)</label>
-        <input type="number" id="concentration_${i}" />
-        <label>Vial Size (ml)</label>
-        <input type="number" id="vialSize_${i}" />
-      </div>
-
-      <div id="oralFields_${i}" style="display:none;">
-        <label>Dosage per Tab (mg)</label>
-        <input type="number" id="doseTab_${i}" />
-        <label>Tabs per Bottle</label>
-        <input type="number" id="tabsBottle_${i}" />
-      </div>
-    `;
-
-    container.appendChild(div);
-    toggleHalfLife(i);
-  }
-}
-
-function toggleHalfLife(index) {
-  const sel = document.getElementById(`compound_${index}`).value;
-  document.getElementById(`customHL_${index}`).style.display = sel === "Custom" ? "block" : "none";
-  document.getElementById(`oralFields_${index}`).style.display = sel.includes("Oral") ? "block" : "none";
-  document.getElementById(`injectableFields_${index}`).style.display = sel.includes("Oral") ? "none" : "block";
-}
-
-
-function calculate() {
-  const freq = parseFloat(document.getElementById("frequency").value);
-  const weeks = parseFloat(document.getElementById("cycleWeeks").value);
-  const baseDays = weeks * 7;
-  const compoundCount = parseInt(document.getElementById("compoundCount").value);
-
-  const resultBox = document.getElementById("resultBox");
-  resultBox.innerHTML = "";
-
-  let totalWeekly = 0;
-  let totalInj = 0;
-  let totalOralTabsPerWeek = 0;
-  let totalOralTabsPerDay = 0;
-  let latestClr = 0;
-
-  const halfLives = Array.from({ length: compoundCount }, (_, i) => {
-    const name = document.getElementById(`compound_${i}`).value;
-    const custom = parseFloat(document.getElementById(`halfLife_${i}`)?.value || 0);
-    return name === "Custom" ? custom : steroidData[name];
-  });
-
-  const maxHL = Math.max(...halfLives);
-  const totalDays = baseDays + Math.ceil((maxHL * 7) / 24);
-  const labels = Array.from({ length: totalDays }, (_, i) => `Day ${i + 1}`);
-  const datasets = [];
-
-  for (let i = 0; i < compoundCount; i++) {
-    const name = document.getElementById(`compound_${i}`).value;
-    const halfLife = name === "Custom"
-      ? parseFloat(document.getElementById(`halfLife_${i}`).value)
-      : steroidData[name];
-    const dose = parseFloat(document.getElementById(`weeklyDose_${i}`).value);
-    if (!halfLife || !dose) {
-      return alert(`Complete all fields for compound ${i + 1}`);
-    }
-
-    let summaryHTML = `<strong>${name}</strong><br>`;
-    const decay = Math.log(2) / halfLife;
-    const data = Array(totalDays).fill(0);
-
-    if (name.includes("Oral")) {
-      const dosagePerTab = parseFloat(document.getElementById(`doseTab_${i}`).value);
-      const tabsPerBottle = parseFloat(document.getElementById(`tabsBottle_${i}`).value);
-      if (!dosagePerTab || !tabsPerBottle) {
-        return alert(`Fill dosage per tab and tabs per bottle for ${name}`);
-      }
-
-      const tabsPerWeek = dose / dosagePerTab;
-      const tabsPerDay = tabsPerWeek / freq;
-      const bottlesNeeded = (tabsPerWeek * weeks) / tabsPerBottle;
-
-      totalOralTabsPerWeek += tabsPerWeek;
-      totalOralTabsPerDay += tabsPerDay;
-
-      summaryHTML += `
-        Tabs/Week: ${tabsPerWeek.toFixed(1)}<br>
-        Tabs/Day: ${tabsPerDay.toFixed(2)}<br>
-        Bottles Needed: ${bottlesNeeded.toFixed(1)}<br>
-      `;
-
-      for (let d = 0; d < totalDays; d++) {
-        data[d] = d < baseDays
-          ? tabsPerDay * Math.pow(0.5, 24 * (d % (7 / freq)) / halfLife)
-          : data[d - 1] * Math.pow(0.5, 24 / halfLife);
-      }
-    } else {
-      const conc = parseFloat(document.getElementById(`concentration_${i}`).value);
-      const vial = parseFloat(document.getElementById(`vialSize_${i}`).value);
-      if (!conc || !vial) {
-        return alert(`Fill concentration and vial info for ${name}`);
-      }
-
-      const weeklyML = dose / conc;
-      const perInj = weeklyML / freq;
-      const totalML = weeklyML * weeks;
-      const vials = totalML / vial;
-
-      totalWeekly += weeklyML;
-      totalInj += perInj;
-
-      summaryHTML += `
-        Weekly Volume: ${weeklyML.toFixed(2)}ml<br>
-        Per Injection: ${perInj.toFixed(2)}ml<br>
-        Vials Needed: ${vials.toFixed(1)}<br>
-      `;
-
-      for (let d = 0; d < totalDays; d++) {
-        data[d] = d < baseDays
-          ? Array.from({ length: Math.floor(d / (7 / freq)) + 1 }, (_, inj) =>
-              perInj * Math.exp(-decay * (d - inj * (7 / freq)) * 24)
-            ).reduce((a, b) => a + b, 0)
-          : data[d - 1] * Math.exp(-decay * 24);
+          <div id="oralFields_${i}" style="display:none;">
+            <label>Dosage per Tab (mg)</label>
+            <input type="number" id="doseTab_${i}" />
+            <label>Tabs per Bottle</label>
+            <input type="number" id="tabsBottle_${i}" />
+          </div>
+        `;
+        container.appendChild(div);
+        toggleHalfLife(i);
       }
     }
 
-    const clr = data.findIndex(v => v < (name.includes("Oral") ? (dose / parseFloat(document.getElementById(`doseTab_${i}`).value) * 0.01) : (weeklyML / freq * 0.01)));
-    const clearanceDay = clr < 0 ? totalDays : clr;
-    if (clearanceDay > latestClr) latestClr = clearanceDay;
-    const postWeeks = Math.max(0, Math.floor((clearanceDay + 1 - baseDays) / 7));
-
-    summaryHTML += `Clears Day ${clearanceDay + 1} (~${postWeeks} wks post cycle)<br><br>`;
-    resultBox.innerHTML += summaryHTML;
-
-    datasets.push({ label: name, data, borderColor: getRandomColor(), fill: false, tension: 0.3 });
-  }
-
-  const allPost = Math.max(0, Math.floor((latestClr + 1 - baseDays) / 7));
-  resultBox.innerHTML += `
-    <hr>
-    Total Weekly Injectable Volume: ${totalWeekly.toFixed(2)}ml<br>
-    Total Per Injection Volume: ${totalInj.toFixed(2)}ml<br>
-    Total Weekly Oral Tabs: ${totalOralTabsPerWeek.toFixed(1)}<br>
-    Total Daily Oral Tabs: ${totalOralTabsPerDay.toFixed(2)}<br>
-    <strong>All Clear By:</strong> Day ${latestClr + 1} (~${allPost} wks post cycle)<br>
-  `;
-
-  if (chart) chart.destroy();
-
-  const ctx = document.getElementById("chart").getContext("2d");
-  chart = new Chart(ctx, {
-    type: 'line',
-    data: { labels, datasets },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { labels: { color: "#f9f9f9" } },
-        annotation: {
-          annotations: {
-            pctLine: {
-              type: 'line',
-              scaleID: 'x',
-              value: labels[latestClr],
-              borderColor: '#e2a53e',
-              borderWidth: 2,
-              borderDash: [6, 6],
-              label: {
-                enabled: true,
-                content: '📍 PCT Start',
-                position: 'start',
-                backgroundColor: '#e2a53e',
-                color: '#1c1c1c',
-                font: { weight: 'bold' },
-              }
-            }
-          }
-        }
-      },
-      scales: {
-        x: { ticks: { color: "#f9f9f9" }, title: { display: true, text: "Days", color: "#f9f9f9" } },
-        y: { ticks: { color: "#f9f9f9" }, title: { display: true, text: "Active Level", color: "#f9f9f9" } }
-      }
+    function toggleHalfLife(index) {
+      const sel = document.getElementById(`compound_${index}`).value;
+      document.getElementById(`customHL_${index}`).style.display = sel === "Custom" ? "block" : "none";
+      document.getElementById(`oralFields_${index}`).style.display = sel.includes("Oral") ? "block" : "none";
+      document.getElementById(`injectableFields_${index}`).style.display = sel.includes("Oral") ? "none" : "block";
     }
-  });
-}
 
-    function getRandomColor(){ const [r,g,b] = Array(3).fill().map(_=>Math.floor(Math.random()*200)); return `rgb(${r},${g},${b})`; }
+    document.addEventListener("DOMContentLoaded", () => renderCompounds());
+
+    function getRandomColor() {
+      const r = Math.floor(Math.random() * 200);
+      const g = Math.floor(Math.random() * 200);
+      const b = Math.floor(Math.random() * 200);
+      return `rgb(${r},${g},${b})`;
+    }
+
+    let chart;
+
+    // Include the final `calculate()` function from your latest post here…
+    // I’ve already reviewed it and confirmed it works — just paste it under here ⬇
   </script>
 </body>
 </html>
