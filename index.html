@@ -88,53 +88,68 @@
     };
 
     function renderCompounds() {
-      const container = document.getElementById("compoundContainer");
-      const count = parseInt(document.getElementById("compoundCount").value);
-      container.innerHTML = "";
+  const container = document.getElementById("compoundContainer");
+  const count = parseInt(document.getElementById("compoundCount").value);
+  container.innerHTML = "";
 
-      const options = Object.entries(steroidData)
-        .map(([name, hl]) => `<option value="${name}">${name}${hl ? ` (${hl}h)` : ""}</option>`)
-        .join("");
+  for (let i = 0; i < count; i++) {
+    const div = document.createElement("div");
+    div.className = "compound-block";
 
-      for (let i = 0; i < count; i++) {
-        const div = document.createElement("div");
-        div.className = "compound-block";
-        div.innerHTML = `
-          <label>Compound ${i+1}</label>
-          <select id="compound_${i}" onchange="toggleFields(${i})">${options}</select>
+    const injectableOptions = Object.entries(steroidData)
+      .filter(([name]) => !name.includes("Oral") && name !== "Custom")
+      .sort()
+      .map(([name, hl]) => `<option value="${name}">${name} (${hl}h)</option>`)
+      .join("");
 
-          <div id="customHL_${i}" style="display:none;">
-            <label>Custom Half-Life (h)</label>
-            <input type="number" id="halfLife_${i}" />
-          </div>
+    const oralOptions = Object.entries(steroidData)
+      .filter(([name]) => name.includes("Oral"))
+      .sort()
+      .map(([name, hl]) => `<option value="${name}">${name} (${hl}h)</option>`)
+      .join("");
 
-          <label>Weekly Dose (mg)</label>
-          <input type="number" id="weeklyDose_${i}" />
+    div.innerHTML = `
+      <label>Compound ${i + 1}</label>
+      <select id="compound_${i}" onchange="toggleFields(${i})">
+        <optgroup label="Injectables">${injectableOptions}</optgroup>
+        <optgroup label="Orals">${oralOptions}</optgroup>
+        <optgroup label="Custom"><option value="Custom">Custom (enter manually)</option></optgroup>
+      </select>
 
-          <div id="injectable_${i}">
-            <label>Concentration (mg/ml)</label>
-            <input type="number" id="concentration_${i}" />
-            <label>Vial Size (ml)</label>
-            <input type="number" id="vialSize_${i}" />
-          </div>
+      <div id="customHL_${i}" style="display:none;">
+        <label>Custom Half-Life (h)</label>
+        <input type="number" id="halfLife_${i}" />
+      </div>
 
-          <div id="oral_${i}" style="display:none;">
-            <label>Dosage per Tab (mg)</label>
-            <input type="number" id="doseTab_${i}" />
-            <label>Tabs per Bottle</label>
-            <input type="number" id="tabsBottle_${i}" />
-            <label>Doses per Day</label>
-            <select id="oralFreq_${i}">
-              <option value="1">Once daily</option>
-              <option value="2">Twice daily</option>
-              <option value="3">Three times daily</option>
-            </select>
-          </div>
-        `;
-        container.appendChild(div);
-        toggleFields(i);
-      }
-    }
+      <label>Weekly Dose (mg)</label>
+      <input type="number" id="weeklyDose_${i}" />
+
+      <div id="injectable_${i}">
+        <label>Concentration (mg/ml)</label>
+        <input type="number" id="concentration_${i}" />
+        <label>Vial Size (ml)</label>
+        <input type="number" id="vialSize_${i}" />
+      </div>
+
+      <div id="oral_${i}" style="display:none;">
+        <label>Dosage per Tab (mg)</label>
+        <input type="number" id="doseTab_${i}" />
+        <label>Tabs per Bottle</label>
+        <input type="number" id="tabsBottle_${i}" />
+        <label>Doses per Day</label>
+        <select id="oralFreq_${i}">
+          <option value="1">Once daily</option>
+          <option value="2">Twice daily</option>
+          <option value="3">Three times daily</option>
+        </select>
+      </div>
+    `;
+
+    container.appendChild(div);
+    toggleFields(i);
+  }
+}
+
 
     function toggleFields(i) {
       const val = document.getElementById(`compound_${i}`).value;
