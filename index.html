@@ -170,6 +170,13 @@
           </div>
 
           <div id="oralFields_${i}" style="display:none;">
+          <label>Doses per Day</label>
+<select id="oralFreq_${i}">
+  <option value="1">Once daily</option>
+  <option value="2">Twice daily</option>
+  <option value="3">Three times daily</option>
+</select>
+
             <label>Dosage per Tab (mg)</label>
             <input type="number" id="doseTab_${i}" />
             <label>Tabs per Bottle</label>
@@ -239,31 +246,40 @@ function calculate() {
     const data = Array(totalDays).fill(0);
 
     if (name.includes("Oral")) {
-      const dosagePerTab = parseFloat(document.getElementById(`doseTab_${i}`).value);
-      const tabsPerBottle = parseFloat(document.getElementById(`tabsBottle_${i}`).value);
-      if (!dosagePerTab || !tabsPerBottle) {
-        return alert(`Fill dosage per tab and tabs per bottle for ${name}`);
-      }
+const dosagePerTab = parseFloat(document.getElementById(`doseTab_${i}`).value);
+const tabsPerBottle = parseFloat(document.getElementById(`tabsBottle_${i}`).value);
+const oralFreq = parseFloat(document.getElementById(`oralFreq_${i}`).value); // ✅ NEW LINE
 
-      const tabsPerWeek = dose / dosagePerTab;
-      const tabsPerDay = tabsPerWeek / freq;
-      const bottlesNeeded = (tabsPerWeek * weeks) / tabsPerBottle;
+if (!dosagePerTab || !tabsPerBottle || !oralFreq) {
+  return alert(`Please complete all fields for ${name}`);
+}
 
-      totalOralTabsPerWeek += tabsPerWeek;
-      totalOralTabsPerDay += tabsPerDay;
+const tabsPerWeek = dose / dosagePerTab;
+const tabsPerDay = tabsPerWeek / 7;
+const tabsPerDose = tabsPerDay / oralFreq;
+const bottlesNeeded = (tabsPerWeek * weeks) / tabsPerBottle;
 
-      summaryHTML += `
-        Tabs/Week: ${tabsPerWeek.toFixed(1)}<br>
-        Tabs/Day: ${tabsPerDay.toFixed(2)}<br>
-        Bottles Needed: ${bottlesNeeded.toFixed(1)}<br>
-      `;
+totalOralTabsPerWeek += tabsPerWeek;
+totalOralTabsPerDay += tabsPerDay;
 
-      for (let d = 0; d < totalDays; d++) {
-        data[d] = d < baseDays
-          ? tabsPerDay * Math.pow(0.5, 24 * (d % (7 / freq)) / halfLife)
-          : data[d - 1] * Math.pow(0.5, 24 / halfLife);
-      }
-    } else {
+summaryHTML += `
+  Tabs/Week: ${tabsPerWeek.toFixed(1)}<br>
+  Tabs/Day: ${tabsPerDay.toFixed(2)} (${oralFreq}x/day)<br>
+  Bottles Needed: ${bottlesNeeded.toFixed(1)}<br>
+`;
+
+// 💉 Adjust decay calculation to reflect multiple doses
+for (let d = 0; d < totalDays; d++) {
+  if (d < baseDays) {
+    for (let freqIndex = 0; freqIndex < oralFreq; freqIndex++) {
+      data[d] += tabsPerDose * Math.exp(-decay * (24 / oralFreq) * freqIndex);
+    }
+  } else {
+    data[d] = data[d - 1] * Math.exp(-decay * 24);
+  }
+}
+
+    else {
       const conc = parseFloat(document.getElementById(`concentration_${i}`).value);
       const vial = parseFloat(document.getElementById(`vialSize_${i}`).value);
       if (!conc || !vial) {
