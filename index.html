@@ -278,18 +278,28 @@ document.getElementById('sendPdfBtn').onclick = async () => {
 
   document.getElementById('sendStatus').innerText = 'Sending…';
 
-  const response = await fetch('/.netlify/functions/sendPdf', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      to: email,
-      html: document.getElementById('resultBox').innerHTML
-    })
-  });
+  try {
+    const response = await fetch('/.netlify/functions/sendPdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: email,
+        html: document.getElementById('resultBox').innerHTML
+      })
+    });
 
-  const result = await response.json();
-  document.getElementById('sendStatus').innerText = result.success ? 'Sent!' : `Error: ${result.error}`;
+    const result = await response.json();
+    console.log('Function response:', result);
+
+    document.getElementById('sendStatus').innerText = result.success 
+      ? 'Sent!' 
+      : `Error: ${result.error || 'Unknown error'}`;
+  } catch (err) {
+    console.error('Fetch error:', err);
+    document.getElementById('sendStatus').innerText = `Network error: ${err.message}`;
+  }
 };
+
 
     }
   </script>
