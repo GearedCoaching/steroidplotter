@@ -40,6 +40,13 @@
 
     <div class="results" id="resultBox"></div>
     <canvas id="chart" style="margin-top:40px;"></canvas>
+    <div id="emailContainer" style="margin-top:20px; display:none;">
+  <label>Want this as a PDF? Enter your email:</label>
+  <input type="email" id="userEmail" placeholder="Your email address" />
+  <button id="sendPdfBtn">Send PDF</button>
+  <span id="sendStatus" style="margin-left:10px;"></span>
+</div>
+
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -263,6 +270,27 @@
           }
         }
       });
+      document.getElementById('emailContainer').style.display = 'block';
+
+document.getElementById('sendPdfBtn').onclick = async () => {
+  const email = document.getElementById('userEmail').value;
+  if (!email) return alert('Please enter your email.');
+
+  document.getElementById('sendStatus').innerText = 'Sending…';
+
+  const response = await fetch('/.netlify/functions/sendPdf', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      to: email,
+      html: document.getElementById('resultBox').innerHTML
+    })
+  });
+
+  const result = await response.json();
+  document.getElementById('sendStatus').innerText = result.success ? 'Sent!' : `Error: ${result.error}`;
+};
+
     }
   </script>
 
