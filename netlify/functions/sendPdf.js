@@ -14,7 +14,8 @@ exports.handler = async (event) => {
     service: 'gmail',
     auth: {
       user: 'info@gearedcoaching.com',
-      pass: 'G!lles12345' // get this from Gmail settings
+      pass: 'vuxb pmhm uwnb qykn
+' // get this from Gmail settings
     }
   });
 
