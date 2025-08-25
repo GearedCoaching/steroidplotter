@@ -175,151 +175,182 @@
     }
 
     let chart;
-    function calculate() {
-      const freq = parseFloat(document.getElementById("frequency").value);
-      const weeks = parseFloat(document.getElementById("cycleWeeks").value);
-      const baseDays = weeks * 7;
-      const count = parseInt(document.getElementById("compoundCount").value);
-      const resultBox = document.getElementById("resultBox");
-      resultBox.innerHTML = "";
+   function calculate() {
+    const freq = parseFloat(document.getElementById("frequency").value);
+    const weeks = parseFloat(document.getElementById("cycleWeeks").value);
+    const baseDays = weeks * 7;
+    const count = parseInt(document.getElementById("compoundCount").value);
+    const resultBox = document.getElementById("resultBox");
+    resultBox.innerHTML = "";
 
-      const totalHL = Array.from({ length: count }, (_, i) => {
+    // Bepaal de totale lengte van de grafiek
+    const totalHL = Array.from({ length: count }, (_, i) => {
         const name = document.getElementById(`compound_${i}`).value;
-        const hl = parseFloat(document.getElementById(`halfLife_${i}`)?.value) || steroidData[name];
-        return hl;
-      });
-      const totalDays = baseDays + Math.ceil(Math.max(...totalHL) * 7 / 24);
-      const labels = Array.from({ length: totalDays }, (_, d) => `Day ${d+1}`);
-      const datasets = [];
+        return name === "Custom" ? 
+               parseFloat(document.getElementById(`halfLife_${i}`).value) : 
+               steroidData[name] || 0;
+    });
+    // Verleng de grafiek met 5x de langste halfwaardetijd om de afname te zien
+    const totalDays = baseDays + Math.ceil(Math.max(...totalHL, 0) * 5 / 24); 
+    const labels = Array.from({ length: totalDays }, (_, d) => `Day ${d + 1}`);
+    const datasets = [];
 
- let totalInjVol = 0;
-let totalInjection = 0;
-let totalTabsW = 0;
-let totalTabsD = 0;
-      let totalVials = 0;
-let totalBottles = 0;
+    let totalInjVol = 0;
+    let totalInjection = 0;
+    let totalTabsW = 0;
+    let totalTabsD = 0;
+    let totalVials = 0;
+    let totalBottles = 0;
 
-      for (let i = 0; i < count; i++) {
+    for (let i = 0; i < count; i++) {
         const name = document.getElementById(`compound_${i}`).value;
         const hl = name === "Custom" ? parseFloat(document.getElementById(`halfLife_${i}`).value) : steroidData[name];
         const doseMg = parseFloat(document.getElementById(`weeklyDose_${i}`).value) || 0;
 
-        if (!hl || !doseMg) { alert(`Fill fields for compound ${i+1}`); return; }
+        if (!hl || !doseMg) {
+            alert(`Fill fields for compound ${i + 1}`);
+            return;
+        }
 
-        const decay = Math.log(2) / hl;
+        const decayConstant = Math.log(2) / hl;
+        const dailyDecayFactor = Math.exp(-decayConstant * 24);
         const data = Array(totalDays).fill(0);
         let summary = `<strong>${name}</strong><br>`;
 
         if (name.includes("Oral")) {
-          const doseTab = parseFloat(document.getElementById(`doseTab_${i}`).value);
-          const tabsBottle = parseFloat(document.getElementById(`tabsBottle_${i}`).value);
-          const oralFreq = parseFloat(document.getElementById(`oralFreq_${i}`).value);
-           const tabsWeek = doseMg / doseTab;
-    const tabsDay = tabsWeek / 7;
-    const tabsDose = tabsDay / oralFreq;
-    const bottles = (tabsWeek * weeks) / tabsBottle;
+            const doseTab = parseFloat(document.getElementById(`doseTab_${i}`).value);
+            const tabsBottle = parseFloat(document.getElementById(`tabsBottle_${i}`).value);
+            const oralFreq = parseFloat(document.getElementById(`oralFreq_${i}`).value);
+            
+            if (!doseTab || !tabsBottle || !oralFreq) {
+                alert(`Complete oral fields for compound ${i + 1}`);
+                continue;
+            }
 
-          if (!doseTab || !tabsBottle) { alert(`Complete oral fields for compound ${i+1}`); continue; }
+            const tabsWeek = doseMg / doseTab;
+            const tabsDay = tabsWeek / 7;
+            const dailyDoseMg = doseMg / 7;
+            const bottles = (tabsWeek * weeks) / tabsBottle;
+            
+            totalTabsW += tabsWeek;
+            totalTabsD += tabsDay;
+            totalBottles += bottles;
 
-          totalTabsW += tabsWeek;
-          totalTabsD += tabsDay;
+            summary += `Tabs/Week: ${tabsWeek.toFixed(1)}<br>`;
+            summary += `Doses/day: ${oralFreq} — Tabs/Dose: ${(tabsDay / oralFreq).toFixed(2)}<br>`;
+            summary += `Bottles Needed: ${bottles.toFixed(1)}<br>`;
 
-          summary += `Tabs/Week: ${tabsWeek.toFixed(1)}<br>`;
-          summary += `Doses/day: ${oralFreq} — Tabs/Dose: ${tabsDose.toFixed(2)}<br>`;
-          summary += `Bottles Needed: ${bottles.toFixed(1)}<br>`;
+            // Correcte iteratieve berekening voor orals
+            for (let d = 0; d < totalDays; d++) {
+                const prevDayLevel = d > 0 ? data[d - 1] : 0;
+                data[d] = prevDayLevel * dailyDecayFactor;
+                if (d < baseDays) {
+                    data[d] += dailyDoseMg;
+                }
+            }
 
-          for (let d = 0; d < totalDays; d++) {
-            if (d < baseDays) {
-              for (let k = 0; k < oralFreq; k++) {
-                data[d] += tabsDose * Math.exp(-decay * (24 / oralFreq) * k);
-              }
-            } else data[d] = data[d-1] * Math.exp(-decay * 24);
-          }
+        } else { // Injectables
+            const conc = parseFloat(document.getElementById(`concentration_${i}`).value) || 0;
+            const vialSize = parseFloat(document.getElementById(`vialSize_${i}`).value) || 0;
 
-        } else {
-          const conc = parseFloat(document.getElementById(`concentration_${i}`).value) || 0;
-          const vialSize = parseFloat(document.getElementById(`vialSize_${i}`).value) || 0;
-          if (!conc || !vialSize) { alert(`Complete injectable fields for compound ${i+1}`); continue; }
+            if (!conc || !vialSize) {
+                alert(`Complete injectable fields for compound ${i + 1}`);
+                continue;
+            }
 
-          const weeklyML = doseMg / conc;
-          const perInj = weeklyML / freq;
-          totalInjVol += weeklyML;
-          totalInjection += perInj;
-           const totalML = weeklyML * weeks;
-        const vials = totalML / vialSize;
-          summary += `Weekly Vol: ${weeklyML.toFixed(2)}ml — Per Inj: ${perInj.toFixed(2)}ml<br>';
-          summary += `Vials Needed: ${vials.toFixed(1)}<br>`;
+            const weeklyML = doseMg / conc;
+            const perInjML = weeklyML / freq;
+            const perInjMg = doseMg / freq;
+            const totalML = weeklyML * weeks;
+            const vials = totalML / vialSize;
+            
+            totalInjVol += weeklyML;
+            totalInjection += perInjML;
+            totalVials += vials;
 
-          for (let d = 0; d < totalDays; d++) {
-            if (d < baseDays) {
-              const injCount = Math.floor(d / (7 / freq)) + 1;
-              for (let inj = 0; inj < injCount; inj++) {
-                const t = d - inj * (7 / freq);
-                data[d] += perInj * Math.exp(-decay * t * 24);
-              }
-            } else data[d] = data[d-1] * Math.exp(-decay * 24);
-          }
+            summary += `Weekly Vol: ${weeklyML.toFixed(2)}ml — Per Inj: ${perInjML.toFixed(2)}ml<br>`;
+            summary += `Vials Needed: ${vials.toFixed(1)}<br>`;
+
+            const injectionIntervalDays = 7 / freq;
+            let lastInjectionDay = -1;
+
+            // Correcte iteratieve berekening voor injectables
+            for (let d = 0; d < totalDays; d++) {
+                const prevDayLevel = d > 0 ? data[d-1] : 0;
+                data[d] = prevDayLevel * dailyDecayFactor;
+
+                // Check of het een injectiedag is
+                if (d < baseDays && (d - lastInjectionDay >= injectionIntervalDays)) {
+                    data[d] += perInjMg;
+                    lastInjectionDay = d;
+                }
+            }
         }
 
         summary += `<br>`;
         resultBox.innerHTML += summary;
 
-        datasets.push({ label: name, data, borderColor: getRandomColor(), fill: false, tension: 0.3 });
-      }
+        datasets.push({
+            label: name,
+            data,
+            borderColor: getRandomColor(),
+            fill: false,
+            tension: 0.3
+        });
+    }
 
-      resultBox.innerHTML += `
-            Total Injectable Volume: ${totalInjVol.toFixed(2)}ml<br>
-              Total Per Injection Volume: ${totalInjection.toFixed(2)}ml<br>
-              Total Vials Needed: ${totalVials.toFixed(1)}<br>
-  Total Weekly Oral Tabs: ${totalTabsW.toFixed(1)} — Daily: ${totalTabsD.toFixed(2)}<br>
-  Total Bottles Needed: ${totalBottles.toFixed(1)}<br>
-              `;
+    resultBox.innerHTML += `
+        <strong>Totals:</strong><br>
+        Total Weekly Injectable Volume: ${totalInjVol.toFixed(2)}ml<br>
+        Total Per Injection Volume: ${totalInjection.toFixed(2)}ml<br>
+        Total Vials Needed: ${totalVials.toFixed(1)}<br>
+        Total Weekly Oral Tabs: ${totalTabsW.toFixed(1)} — Daily: ${totalTabsD.toFixed(2)}<br>
+        Total Bottles Needed: ${totalBottles.toFixed(1)}<br>
+    `;
 
-      if (chart) chart.destroy();
-      chart = new Chart(document.getElementById("chart").getContext("2d"), {
+    if (chart) chart.destroy();
+    chart = new Chart(document.getElementById("chart").getContext("2d"), {
         type: 'line',
         data: { labels, datasets },
         options: {
-          responsive: true,
-          plugins: { legend: { labels: { color: "#f9f9f9" } } },
-          scales: {
-            x: { ticks: { color: "#f9f9f9" }, title: { display: true, text: "Days", color: "#f9f9f9" } },
-            y: { ticks: { color: "#f9f9f9" }, title: { display: true, text: "Active Level", color: "#f9f9f9" } },
-          }
+            responsive: true,
+            plugins: { legend: { labels: { color: "#f9f9f9" } } },
+            scales: {
+                x: { ticks: { color: "#f9f9f9" }, title: { display: true, text: "Days", color: "#f9f9f9" } },
+                y: { ticks: { color: "#f9f9f9" }, title: { display: true, text: "Active Milligrams (Relative)", color: "#f9f9f9" } },
+            }
         }
-      });
-      document.getElementById('emailContainer').style.display = 'block';
-
-document.getElementById('sendPdfBtn').onclick = async () => {
-  const email = document.getElementById('userEmail').value;
-  if (!email) return alert('Please enter your email.');
-
-  document.getElementById('sendStatus').innerText = 'Sending…';
-
-  try {
-    const response = await fetch('/.netlify/functions/sendPdf', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        to: email,
-        html: document.getElementById('resultBox').innerHTML
-      })
     });
+    document.getElementById('emailContainer').style.display = 'block';
 
-    const result = await response.json();
-    console.log('Function response:', result);
+    document.getElementById('sendPdfBtn').onclick = async () => {
+        const email = document.getElementById('userEmail').value;
+        if (!email) return alert('Please enter your email.');
 
-    document.getElementById('sendStatus').innerText = result.success 
-      ? 'Sent!' 
-      : `Error: ${result.error || 'Unknown error'}`;
-  } catch (err) {
-    console.error('Fetch error:', err);
-    document.getElementById('sendStatus').innerText = `Network error: ${err.message}`;
-  }
-};
+        document.getElementById('sendStatus').innerText = 'Sending…';
 
+        try {
+            const response = await fetch('/.netlify/functions/sendPdf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    to: email,
+                    html: document.getElementById('resultBox').innerHTML
+                })
+            });
 
-    }
+            const result = await response.json();
+            console.log('Function response:', result);
+
+            document.getElementById('sendStatus').innerText = result.success ?
+                'Sent!' :
+                `Error: ${result.error || 'Unknown error'}`;
+        } catch (err) {
+            console.error('Fetch error:', err);
+            document.getElementById('sendStatus').innerText = `Network error: ${err.message}`;
+        }
+    };
+}
   </script>
 
 </body>
