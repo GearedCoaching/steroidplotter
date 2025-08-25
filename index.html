@@ -192,12 +192,12 @@
       const labels = Array.from({ length: totalDays }, (_, d) => `Day ${d+1}`);
       const datasets = [];
 
-      let totalInjVol = 0;
-let totalInjection = 0; // <-- Newly added
+ let totalInjVol = 0;
+let totalInjection = 0;
 let totalTabsW = 0;
 let totalTabsD = 0;
-let bottlesNeeded = 0; // For oral summary
-let vials; 
+      let totalVials = 0;
+let totalBottles = 0;
 
       for (let i = 0; i < count; i++) {
         const name = document.getElementById(`compound_${i}`).value;
@@ -214,18 +214,19 @@ let vials;
           const doseTab = parseFloat(document.getElementById(`doseTab_${i}`).value);
           const tabsBottle = parseFloat(document.getElementById(`tabsBottle_${i}`).value);
           const oralFreq = parseFloat(document.getElementById(`oralFreq_${i}`).value);
+           const tabsWeek = doseMg / doseTab;
+    const tabsDay = tabsWeek / 7;
+    const tabsDose = tabsDay / oralFreq;
+    const bottles = (tabsWeek * weeks) / tabsBottle;
+
           if (!doseTab || !tabsBottle) { alert(`Complete oral fields for compound ${i+1}`); return; }
 
-          const tabsWeek = doseMg / doseTab;
-          const tabsDay = tabsWeek / 7;
-          const tabsDose = tabsDay / oralFreq;
-          const bottles = (tabsWeek * weeks) / tabsBottle;
           totalTabsW += tabsWeek;
           totalTabsD += tabsDay;
 
           summary += `Tabs/Week: ${tabsWeek.toFixed(1)}<br>`;
-          summary += `Doses/day: ${oralFreq}, Tabs/Dose: ${tabsDose.toFixed(2)}<br>`;
-          summary += `Bottles: ${bottles.toFixed(1)}<br>`;
+          summary += `Doses/day: ${oralFreq} — Tabs/Dose: ${tabsDose.toFixed(2)}<br>`;
+          summary += `Bottles Needed: ${bottles.toFixed(1)}<br>`;
 
           for (let d = 0; d < totalDays; d++) {
             if (d < baseDays) {
@@ -246,7 +247,8 @@ let vials;
           totalInjection += perInj;
            const totalML = weeklyML * weeks;
         const vials = totalML / vialSize;
-          summary += `Weekly Vol: ${weeklyML.toFixed(2)}ml, Per Inj: ${perInj.toFixed(2)}ml<br>Vials Needed: ${vials.toFixed(1)}<br>`;
+          summary += `Weekly Vol: ${weeklyML.toFixed(2)}ml — Per Inj: ${perInj.toFixed(2)}ml<br>';
+          summary += `Vials Needed: ${vials.toFixed(1)}<br>`;
 
           for (let d = 0; d < totalDays; d++) {
             if (d < baseDays) {
@@ -265,7 +267,13 @@ let vials;
         datasets.push({ label: name, data, borderColor: getRandomColor(), fill: false, tension: 0.3 });
       }
 
-      resultBox.innerHTML += `<hr>Total Inj Volume: ${totalInjVol.toFixed(2)}ml<br>Total per Inj Volume: ${perInj.toFixed(2)}ml<br>Vials Needed: ${vials.toFixed(1)}<br>Total Oral Tabs/Week: ${totalTabsW.toFixed(1)}<br>per Day: ${totalTabsD.toFixed(2)}<br>Bottles Needed: ${bottlesNeeded.toFixed(1)}<br>`;
+      resultBox.innerHTML += `
+            Total Injectable Volume: ${totalInjVol.toFixed(2)}ml<br>
+              Total Per Injection Volume: ${totalInjection.toFixed(2)}ml<br>
+              Total Vials Needed: ${totalVials.toFixed(1)}<br>
+  Total Weekly Oral Tabs: ${totalTabsW.toFixed(1)} — Daily: ${totalTabsD.toFixed(2)}<br>
+  Total Bottles Needed: ${totalBottles.toFixed(1)}<br>
+              `;
 
       if (chart) chart.destroy();
       chart = new Chart(document.getElementById("chart").getContext("2d"), {
