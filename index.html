@@ -219,7 +219,7 @@ let totalBottles = 0;
     const tabsDose = tabsDay / oralFreq;
     const bottles = (tabsWeek * weeks) / tabsBottle;
 
-          if (!doseTab || !tabsBottle) { alert(`Complete oral fields for compound ${i+1}`); return; }
+          if (!doseTab || !tabsBottle) { alert(`Complete oral fields for compound ${i+1}`); continue; }
 
           totalTabsW += tabsWeek;
           totalTabsD += tabsDay;
@@ -239,7 +239,7 @@ let totalBottles = 0;
         } else {
           const conc = parseFloat(document.getElementById(`concentration_${i}`).value) || 0;
           const vialSize = parseFloat(document.getElementById(`vialSize_${i}`).value) || 0;
-          if (!conc || !vialSize) { alert(`Complete injectable fields for compound ${i+1}`); return; }
+          if (!conc || !vialSize) { alert(`Complete injectable fields for compound ${i+1}`); continue; }
 
           const weeklyML = doseMg / conc;
           const perInj = weeklyML / freq;
