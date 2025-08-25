@@ -324,7 +324,10 @@
     document.getElementById('emailContainer').style.display = 'block';
 
    // Plaats deze code binnen de <script> tag, ter vervanging van de oude .onclick handler
-
+<div style="margin-top:15px; display:flex; align-items:center;">
+  <input type="checkbox" id="subscribeCheckbox" checked style="width:auto; margin-right:10px;">
+  <label for="subscribeCheckbox" style="display:inline; width:auto;">Ja, voeg mij toe aan de mailinglijst voor updates.</label>
+</div>
 document.getElementById('sendPdfBtn').onclick = async () => {
     const email = document.getElementById('userEmail').value;
     if (!email) {
@@ -372,7 +375,8 @@ document.getElementById('sendPdfBtn').onclick = async () => {
                 subject: 'Your Steroid Cycle Plan',
                 html: emailHtmlTemplate, // Stuur de template met placeholder
                 chartImage: chartImage    // Stuur de afbeeldingsdata apart mee
-            })
+            subscribe: document.getElementById('subscribeCheckbox').checked
+})
         });
 
         const result = await response.json();
