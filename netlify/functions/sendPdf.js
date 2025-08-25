@@ -23,7 +23,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { to, subject, html, chartImage } = JSON.parse(event.body || '{}');
+    const { to, subject, html, chartImage, subscribe } = JSON.parse(event.body || '{}');
 
     if (!to || !html || !chartImage) {
       return { statusCode: 400, body: JSON.stringify({ success: false, error: "Missing required fields" }) };
@@ -52,6 +52,7 @@ exports.handler = async (event) => {
     console.log(`Email sent successfully to ${to}`);
 
     // --- Stap 2: E-mailadres toevoegen aan Mailchimp ---
+   if (subscribe) {
     try {
       await mailchimp.lists.addListMember(listId, {
         email_address: to,
@@ -63,7 +64,7 @@ exports.handler = async (event) => {
       // We loggen de fout, maar laten de functie slagen.
       // Mailchimp geeft vaak een error als de gebruiker al op de lijst staat, wat prima is.
       console.warn(`Could not add ${to} to Mailchimp:`, mailchimpError.message);
-    }
+    }}
 
     return {
       statusCode: 200,
