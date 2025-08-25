@@ -323,33 +323,82 @@
     });
     document.getElementById('emailContainer').style.display = 'block';
 
-    document.getElementById('sendPdfBtn').onclick = async () => {
-        const email = document.getElementById('userEmail').value;
-        if (!email) return alert('Please enter your email.');
+   // Plaats deze code binnen de <script> tag, ter vervanging van de oude .onclick handler
 
-        document.getElementById('sendStatus').innerText = 'Sending…';
+document.getElementById('sendPdfBtn').onclick = async () => {
+    const email = document.getElementById('userEmail').value;
+    if (!email) {
+        alert('Please enter your email.');
+        return;
+    }
 
-        try {
-            const response = await fetch('/.netlify/functions/sendPdf', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    to: email,
-                    html: document.getElementById('resultBox').innerHTML
-                })
-            });
+    document.getElementById('sendStatus').innerText = 'Generating & Sending…';
 
-            const result = await response.json();
-            console.log('Function response:', result);
+    // 1. Converteer de canvas grafiek naar een base64 afbeelding
+    const chartCanvas = document.getElementById('chart');
+    const chartImage = chartCanvas.toDataURL('image/png');
 
-            document.getElementById('sendStatus').innerText = result.success ?
-                'Sent!' :
-                `Error: ${result.error || 'Unknown error'}`;
-        } catch (err) {
-            console.error('Fetch error:', err);
-            document.getElementById('sendStatus').innerText = `Network error: ${err.message}`;
-        }
-    };
+    // 2. Haal de samenvatting op
+    const summaryHtml = document.getElementById('resultBox').innerHTML;
+
+    // 3. Bouw de volledige HTML-body voor de e-mail
+    const emailHtml = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Your Steroid Cycle Plan</title>
+            <style>
+                body { font-family: sans-serif; background-color: #f4f4f4; color: #333; padding: 20px; }
+                .container { max-width: 600px; margin: auto; background-color: #ffffff; border: 1px solid #ddd; border-radius: 10px; padding: 30px; }
+                h1 { color: #b73239; }
+                img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px; margin-top: 20px; }
+                .summary { margin-top: 20px; padding: 15px; background-color: #f9f9f9; border-radius: 5px; }
+                .footer { margin-top: 30px; font-size: 0.8em; text-align: center; color: #777; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Your Cycle Plan & Projection</h1>
+                <p>Hi,</p>
+                <p>Here is the cycle plan you generated using the Steroid Calculator & Plotter. Please find your summary and projected active levels chart below.</p>
+                
+                <div class="summary">
+                    <h2>Summary</h2>
+                    ${summaryHtml}
+                </div>
+
+                <h2>Projected Active Levels</h2>
+                <p>This chart shows the estimated relative amount of active compound over time.</p>
+                <img src="${chartImage}" alt="Steroid Cycle Chart">
+
+                <div class="footer">
+                    <p>Disclaimer: This information is for educational and illustrative purposes only. Consult with a qualified healthcare professional before making any decisions.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
+
+    // 4. Stuur de volledige HTML naar de Netlify functie
+    try {
+        const response = await fetch('/.netlify/functions/sendPdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                to: email,
+                subject: 'Your Steroid Cycle Plan', // We kunnen nu ook een onderwerp meegeven
+                html: emailHtml // Stuur de volledige HTML
+            })
+        });
+
+        const result = await response.json();
+        document.getElementById('sendStatus').innerText = result.success ? 'Sent!' : `Error: ${result.error || 'Unknown error'}`;
+    } catch (err) {
+        document.getElementById('sendStatus').innerText = `Network error: ${err.message}`;
+    }
+};
 }
   </script>
 
