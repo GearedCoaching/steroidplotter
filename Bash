@@ -1,1 +1,2 @@
 npm install cloudinary
+npm install @mailchimp/mailchimp_marketing
