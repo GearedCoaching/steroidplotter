@@ -192,7 +192,12 @@
       const labels = Array.from({ length: totalDays }, (_, d) => `Day ${d+1}`);
       const datasets = [];
 
-      let totalInjVol = 0, totalTabsW = 0, totalTabsD = 0;
+      let totalInjVol = 0;
+let totalInjection = 0; // <-- Newly added
+let totalTabsW = 0;
+let totalTabsD = 0;
+let bottlesNeeded = 0; // For oral summary
+let vials; 
 
       for (let i = 0; i < count; i++) {
         const name = document.getElementById(`compound_${i}`).value;
