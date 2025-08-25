@@ -57,360 +57,294 @@
 
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
     const steroidData = {
-            "Boldenone Cypionate": 144,
-      "Boldenone Undecylenate": 336,
-      "Dihydroboldenone Cypionate": 144,
-      "Drostanolone Enanthate": 120,
-      "Drostanolone Propionate": 48,
-      "Methandione Injectable": 6,
-      "Methyldrostanolone Injectable": 12,
-      "Methenolone Enanthate": 120,
-      "Methenolone Acetate": 4,
-      "Nandrolone Decanoate": 192,
-      "Nandrolone Phenylpropionate": 96,
-      "Stanozolol Suspension": 24,
-      "Testosterone Acetate": 48,
-      "Testosterone Base": 2,
-      "Testosterone Cypionate": 144,
-      "Testosterone Decanoate": 192,
-      "Testosterone Enanthate": 120,
-      "Testosterone Isocaproate": 144,
-      "Testosterone Phenylpropionate": 96,
-      "Testosterone Propionate": 48,
-      "Testosterone Suspension": 24,
-      "Testosterone Undercanoate": 1000,
-      "Trestolone Acetate": 48,
-      "Trestolone Enanthate": 120,
-      "Trenbolone Acetate": 48,
-      "Trenbolone Base": 6,
-      "Trenbolone Enanthate": 120,
-      "Trenbolone Hexahydrobenzyl Carbonate": 144,
-      "Chlordehydromethyltestosterone": 12,
-      "Fluoxymesterone Oral": 9,
-      "Methandione Oral": 4,
-      "Methyl-1-testosterone Oral": 4,
-      "Methyldrostanolone Oral": 6,
-      "Methylstenbolone Oral": 4,
-      "Metribolone Oral": 6,
-      "Oxandrolone Oral": 9,
-      "Oxymetholone Oral (Anadrol)": 8,
-      "Stanozolol Oral": 9,
-      "Custom": null
-
+        "Boldenone Cypionate": 144,
+        "Boldenone Undecylenate": 336,
+        "Dihydroboldenone Cypionate": 144,
+        "Drostanolone Enanthate": 120,
+        "Drostanolone Propionate": 48,
+        "Methandione Injectable": 6,
+        "Methyldrostanolone Injectable": 12,
+        "Methenolone Enanthate": 120,
+        "Methenolone Acetate": 4,
+        "Nandrolone Decanoate": 192,
+        "Nandrolone Phenylpropionate": 96,
+        "Stanozolol Suspension": 24,
+        "Testosterone Acetate": 48,
+        "Testosterone Base": 2,
+        "Testosterone Cypionate": 144,
+        "Testosterone Decanoate": 192,
+        "Testosterone Enanthate": 120,
+        "Testosterone Isocaproate": 144,
+        "Testosterone Phenylpropionate": 96,
+        "Testosterone Propionate": 48,
+        "Testosterone Suspension": 24,
+        "Testosterone Undercanoate": 1000,
+        "Trestolone Acetate": 48,
+        "Trestolone Enanthate": 120,
+        "Trenbolone Acetate": 48,
+        "Trenbolone Base": 6,
+        "Trenbolone Enanthate": 120,
+        "Trenbolone Hexahydrobenzyl Carbonate": 144,
+        "Chlordehydromethyltestosterone": 12,
+        "Fluoxymesterone Oral": 9,
+        "Methandione Oral": 4,
+        "Methyl-1-testosterone Oral": 4,
+        "Methyldrostanolone Oral": 6,
+        "Methylstenbolone Oral": 4,
+        "Metribolone Oral": 6,
+        "Oxandrolone Oral": 9,
+        "Oxymetholone Oral (Anadrol)": 8,
+        "Stanozolol Oral": 9,
+        "Custom": null
     };
 
     function renderCompounds() {
-  const container = document.getElementById("compoundContainer");
-  const count = parseInt(document.getElementById("compoundCount").value);
-  container.innerHTML = "";
+        const container = document.getElementById("compoundContainer");
+        const count = parseInt(document.getElementById("compoundCount").value);
+        container.innerHTML = "";
 
-  for (let i = 0; i < count; i++) {
-    const div = document.createElement("div");
-    div.className = "compound-block";
+        for (let i = 0; i < count; i++) {
+            const div = document.createElement("div");
+            div.className = "compound-block";
 
-    const injectableOptions = Object.entries(steroidData)
-      .filter(([name]) => !name.includes("Oral") && name !== "Custom")
-      .sort()
-      .map(([name, hl]) => `<option value="${name}">${name} (${hl}h)</option>`)
-      .join("");
+            const injectableOptions = Object.entries(steroidData)
+                .filter(([name]) => !name.includes("Oral") && name !== "Custom")
+                .sort()
+                .map(([name, hl]) => `<option value="${name}">${name} (${hl}h)</option>`)
+                .join("");
 
-    const oralOptions = Object.entries(steroidData)
-      .filter(([name]) => name.includes("Oral"))
-      .sort()
-      .map(([name, hl]) => `<option value="${name}">${name} (${hl}h)</option>`)
-      .join("");
+            const oralOptions = Object.entries(steroidData)
+                .filter(([name]) => name.includes("Oral"))
+                .sort()
+                .map(([name, hl]) => `<option value="${name}">${name} (${hl}h)</option>`)
+                .join("");
 
-    div.innerHTML = `
-      <label>Compound ${i + 1}</label>
-      <select id="compound_${i}" onchange="toggleFields(${i})">
-        <optgroup label="Injectables">${injectableOptions}</optgroup>
-        <optgroup label="Orals">${oralOptions}</optgroup>
-        <optgroup label="Custom"><option value="Custom">Custom (enter manually)</option></optgroup>
-      </select>
-
-      <div id="customHL_${i}" style="display:none;">
-        <label>Custom Half-Life (h)</label>
-        <input type="number" id="halfLife_${i}" />
-      </div>
-
-      <label>Weekly Dose (mg)</label>
-      <input type="number" id="weeklyDose_${i}" />
-
-      <div id="injectable_${i}">
-        <label>Concentration (mg/ml)</label>
-        <input type="number" id="concentration_${i}" />
-        <label>Vial Size (ml)</label>
-        <input type="number" id="vialSize_${i}" />
-      </div>
-
-      <div id="oral_${i}" style="display:none;">
-        <label>Dosage per Tab (mg)</label>
-        <input type="number" id="doseTab_${i}" />
-        <label>Tabs per Bottle</label>
-        <input type="number" id="tabsBottle_${i}" />
-        <label>Doses per Day</label>
-        <select id="oralFreq_${i}">
-          <option value="1">Once daily</option>
-          <option value="2">Twice daily</option>
-          <option value="3">Three times daily</option>
-        </select>
-      </div>
-    `;
-
-    container.appendChild(div);
-    toggleFields(i);
-  }
-}
-
-
-    function toggleFields(i) {
-      const val = document.getElementById(`compound_${i}`).value;
-      document.getElementById(`customHL_${i}`).style.display = val === "Custom" ? "block" : "none";
-      const isOral = val.includes("Oral");
-      document.getElementById(`oral_${i}`).style.display = isOral ? "block" : "none";
-      document.getElementById(`injectable_${i}`).style.display = isOral ? "none" : "block";
+            div.innerHTML = `
+                <label>Compound ${i + 1}</label>
+                <select id="compound_${i}" onchange="toggleFields(${i})">
+                    <optgroup label="Injectables">${injectableOptions}</optgroup>
+                    <optgroup label="Orals">${oralOptions}</optgroup>
+                    <optgroup label="Custom"><option value="Custom">Custom (enter manually)</option></optgroup>
+                </select>
+                <div id="customHL_${i}" style="display:none;">
+                    <label>Custom Half-Life (h)</label>
+                    <input type="number" id="halfLife_${i}" />
+                </div>
+                <label>Weekly Dose (mg)</label>
+                <input type="number" id="weeklyDose_${i}" />
+                <div id="injectable_${i}">
+                    <label>Concentration (mg/ml)</label>
+                    <input type="number" id="concentration_${i}" />
+                    <label>Vial Size (ml)</label>
+                    <input type="number" id="vialSize_${i}" />
+                </div>
+                <div id="oral_${i}" style="display:none;">
+                    <label>Dosage per Tab (mg)</label>
+                    <input type="number" id="doseTab_${i}" />
+                    <label>Tabs per Bottle</label>
+                    <input type="number" id="tabsBottle_${i}" />
+                    <label>Doses per Day</label>
+                    <select id="oralFreq_${i}">
+                        <option value="1">Once daily</option>
+                        <option value="2">Twice daily</option>
+                        <option value="3">Three times daily</option>
+                    </select>
+                </div>
+            `;
+            container.appendChild(div);
+            toggleFields(i);
+        }
     }
 
-    document.addEventListener("DOMContentLoaded", renderCompounds);
+    function toggleFields(i) {
+        const val = document.getElementById(`compound_${i}`).value;
+        document.getElementById(`customHL_${i}`).style.display = val === "Custom" ? "block" : "none";
+        const isOral = val.includes("Oral");
+        document.getElementById(`oral_${i}`).style.display = isOral ? "block" : "none";
+        document.getElementById(`injectable_${i}`).style.display = isOral ? "none" : "block";
+    }
 
     function getRandomColor() {
-      return `rgb(${[...Array(3)].map(_ => Math.floor(Math.random()*200)).join(',')})`;
+        return `rgb(${[...Array(3)].map(_ => Math.floor(Math.random() * 200)).join(',')})`;
     }
 
     let chart;
-   function calculate() {
-    const freq = parseFloat(document.getElementById("frequency").value);
-    const weeks = parseFloat(document.getElementById("cycleWeeks").value);
-    const baseDays = weeks * 7;
-    const count = parseInt(document.getElementById("compoundCount").value);
-    const resultBox = document.getElementById("resultBox");
-    resultBox.innerHTML = "";
 
-    // Bepaal de totale lengte van de grafiek
-    const totalHL = Array.from({ length: count }, (_, i) => {
-        const name = document.getElementById(`compound_${i}`).value;
-        return name === "Custom" ? 
-               parseFloat(document.getElementById(`halfLife_${i}`).value) : 
-               steroidData[name] || 0;
-    });
-    // Verleng de grafiek met 5x de langste halfwaardetijd om de afname te zien
-    const totalDays = baseDays + Math.ceil(Math.max(...totalHL, 0) * 5 / 24); 
-    const labels = Array.from({ length: totalDays }, (_, d) => `Day ${d + 1}`);
-    const datasets = [];
+    function calculate() {
+        const freq = parseFloat(document.getElementById("frequency").value);
+        const weeks = parseFloat(document.getElementById("cycleWeeks").value);
+        const baseDays = weeks * 7;
+        const count = parseInt(document.getElementById("compoundCount").value);
+        const resultBox = document.getElementById("resultBox");
+        resultBox.innerHTML = "";
 
-    let totalInjVol = 0;
-    let totalInjection = 0;
-    let totalTabsW = 0;
-    let totalTabsD = 0;
-    let totalVials = 0;
-    let totalBottles = 0;
+        const totalHL = Array.from({ length: count }, (_, i) => {
+            const name = document.getElementById(`compound_${i}`).value;
+            return name === "Custom" ?
+                parseFloat(document.getElementById(`halfLife_${i}`).value) :
+                steroidData[name] || 0;
+        });
+        const totalDays = baseDays + Math.ceil(Math.max(...totalHL, 0) * 5 / 24);
+        const labels = Array.from({ length: totalDays }, (_, d) => `Day ${d + 1}`);
+        const datasets = [];
 
-    for (let i = 0; i < count; i++) {
-        const name = document.getElementById(`compound_${i}`).value;
-        const hl = name === "Custom" ? parseFloat(document.getElementById(`halfLife_${i}`).value) : steroidData[name];
-        const doseMg = parseFloat(document.getElementById(`weeklyDose_${i}`).value) || 0;
+        let totalInjVol = 0, totalInjection = 0, totalTabsW = 0, totalTabsD = 0, totalVials = 0, totalBottles = 0;
 
-        if (!hl || !doseMg) {
-            alert(`Fill fields for compound ${i + 1}`);
+        for (let i = 0; i < count; i++) {
+            const name = document.getElementById(`compound_${i}`).value;
+            const hl = name === "Custom" ? parseFloat(document.getElementById(`halfLife_${i}`).value) : steroidData[name];
+            const doseMg = parseFloat(document.getElementById(`weeklyDose_${i}`).value) || 0;
+            if (!hl || !doseMg) {
+                alert(`Fill fields for compound ${i + 1}`);
+                return;
+            }
+            const decayConstant = Math.log(2) / hl;
+            const dailyDecayFactor = Math.exp(-decayConstant * 24);
+            const data = Array(totalDays).fill(0);
+            let summary = `<strong>${name}</strong><br>`;
+
+            if (name.includes("Oral")) {
+                const doseTab = parseFloat(document.getElementById(`doseTab_${i}`).value);
+                const tabsBottle = parseFloat(document.getElementById(`tabsBottle_${i}`).value);
+                const oralFreq = parseFloat(document.getElementById(`oralFreq_${i}`).value);
+                if (!doseTab || !tabsBottle || !oralFreq) {
+                    alert(`Complete oral fields for compound ${i + 1}`);
+                    continue;
+                }
+                const tabsWeek = doseMg / doseTab;
+                const tabsDay = tabsWeek / 7;
+                const dailyDoseMg = doseMg / 7;
+                const bottles = (tabsWeek * weeks) / tabsBottle;
+                totalTabsW += tabsWeek;
+                totalTabsD += tabsDay;
+                totalBottles += bottles;
+                summary += `Tabs/Week: ${tabsWeek.toFixed(1)}<br>`;
+                summary += `Doses/day: ${oralFreq} — Tabs/Dose: ${(tabsDay / oralFreq).toFixed(2)}<br>`;
+                summary += `Bottles Needed: ${bottles.toFixed(1)}<br>`;
+                for (let d = 0; d < totalDays; d++) {
+                    const prevDayLevel = d > 0 ? data[d - 1] : 0;
+                    data[d] = prevDayLevel * dailyDecayFactor;
+                    if (d < baseDays) {
+                        data[d] += dailyDoseMg;
+                    }
+                }
+            } else { // Injectables
+                const conc = parseFloat(document.getElementById(`concentration_${i}`).value) || 0;
+                const vialSize = parseFloat(document.getElementById(`vialSize_${i}`).value) || 0;
+                if (!conc || !vialSize) {
+                    alert(`Complete injectable fields for compound ${i + 1}`);
+                    continue;
+                }
+                const weeklyML = doseMg / conc;
+                const perInjML = weeklyML / freq;
+                const perInjMg = doseMg / freq;
+                const totalML = weeklyML * weeks;
+                const vials = totalML / vialSize;
+                totalInjVol += weeklyML;
+                totalInjection += perInjML;
+                totalVials += vials;
+                summary += `Weekly Vol: ${weeklyML.toFixed(2)}ml — Per Inj: ${perInjML.toFixed(2)}ml<br>`;
+                summary += `Vials Needed: ${vials.toFixed(1)}<br>`;
+                const injectionIntervalDays = 7 / freq;
+                let lastInjectionDay = -injectionIntervalDays; // Start ready for injection on day 0
+                for (let d = 0; d < totalDays; d++) {
+                    const prevDayLevel = d > 0 ? data[d - 1] : 0;
+                    data[d] = prevDayLevel * dailyDecayFactor;
+                    if (d < baseDays && (d >= lastInjectionDay + injectionIntervalDays)) {
+                        data[d] += perInjMg;
+                        lastInjectionDay += injectionIntervalDays;
+                    }
+                }
+            }
+            summary += `<br>`;
+            resultBox.innerHTML += summary;
+            datasets.push({
+                label: name,
+                data,
+                borderColor: getRandomColor(),
+                fill: false,
+                tension: 0.3
+            });
+        }
+        resultBox.innerHTML += `
+            <strong>Totals:</strong><br>
+            Total Weekly Injectable Volume: ${totalInjVol.toFixed(2)}ml<br>
+            Total Per Injection Volume: ${totalInjection.toFixed(2)}ml<br>
+            Total Vials Needed: ${totalVials.toFixed(1)}<br>
+            Total Weekly Oral Tabs: ${totalTabsW.toFixed(1)} — Daily: ${totalTabsD.toFixed(2)}<br>
+            Total Bottles Needed: ${totalBottles.toFixed(1)}<br>
+        `;
+        if (chart) chart.destroy();
+        chart = new Chart(document.getElementById("chart").getContext("2d"), {
+            type: 'line',
+            data: { labels, datasets },
+            options: {
+                responsive: true,
+                plugins: { legend: { labels: { color: "#f9f9f9" } } },
+                scales: {
+                    x: { ticks: { color: "#f9f9f9" }, title: { display: true, text: "Days", color: "#f9f9f9" } },
+                    y: { ticks: { color: "#f9f9f9" }, title: { display: true, text: "Active Milligrams (Relative)", color: "#f9f9f9" } },
+                }
+            }
+        });
+        document.getElementById('emailContainer').style.display = 'block';
+    }
+
+    // **BELANGRIJK: DEZE REGEL ZORGT ERVOOR DAT DE COMPOUNDS WORDEN GETOOND**
+    document.addEventListener("DOMContentLoaded", renderCompounds);
+
+    document.getElementById('sendPdfBtn').onclick = async () => {
+        const email = document.getElementById('userEmail').value;
+        if (!email) {
+            alert('Please enter your email.');
             return;
         }
+        document.getElementById('sendStatus').innerText = 'Generating & Sending…';
 
-        const decayConstant = Math.log(2) / hl;
-        const dailyDecayFactor = Math.exp(-decayConstant * 24);
-        const data = Array(totalDays).fill(0);
-        let summary = `<strong>${name}</strong><br>`;
+        const chartCanvas = document.getElementById('chart');
+        const chartImage = chartCanvas.toDataURL('image/png');
+        const summaryHtml = document.getElementById('resultBox').innerHTML;
 
-        if (name.includes("Oral")) {
-            const doseTab = parseFloat(document.getElementById(`doseTab_${i}`).value);
-            const tabsBottle = parseFloat(document.getElementById(`tabsBottle_${i}`).value);
-            const oralFreq = parseFloat(document.getElementById(`oralFreq_${i}`).value);
-            
-            if (!doseTab || !tabsBottle || !oralFreq) {
-                alert(`Complete oral fields for compound ${i + 1}`);
-                continue;
-            }
-
-            const tabsWeek = doseMg / doseTab;
-            const tabsDay = tabsWeek / 7;
-            const dailyDoseMg = doseMg / 7;
-            const bottles = (tabsWeek * weeks) / tabsBottle;
-            
-            totalTabsW += tabsWeek;
-            totalTabsD += tabsDay;
-            totalBottles += bottles;
-
-            summary += `Tabs/Week: ${tabsWeek.toFixed(1)}<br>`;
-            summary += `Doses/day: ${oralFreq} — Tabs/Dose: ${(tabsDay / oralFreq).toFixed(2)}<br>`;
-            summary += `Bottles Needed: ${bottles.toFixed(1)}<br>`;
-
-            // Correcte iteratieve berekening voor orals
-            for (let d = 0; d < totalDays; d++) {
-                const prevDayLevel = d > 0 ? data[d - 1] : 0;
-                data[d] = prevDayLevel * dailyDecayFactor;
-                if (d < baseDays) {
-                    data[d] += dailyDoseMg;
-                }
-            }
-
-        } else { // Injectables
-            const conc = parseFloat(document.getElementById(`concentration_${i}`).value) || 0;
-            const vialSize = parseFloat(document.getElementById(`vialSize_${i}`).value) || 0;
-
-            if (!conc || !vialSize) {
-                alert(`Complete injectable fields for compound ${i + 1}`);
-                continue;
-            }
-
-            const weeklyML = doseMg / conc;
-            const perInjML = weeklyML / freq;
-            const perInjMg = doseMg / freq;
-            const totalML = weeklyML * weeks;
-            const vials = totalML / vialSize;
-            
-            totalInjVol += weeklyML;
-            totalInjection += perInjML;
-            totalVials += vials;
-
-            summary += `Weekly Vol: ${weeklyML.toFixed(2)}ml — Per Inj: ${perInjML.toFixed(2)}ml<br>`;
-            summary += `Vials Needed: ${vials.toFixed(1)}<br>`;
-
-            const injectionIntervalDays = 7 / freq;
-            let lastInjectionDay = -1;
-
-            // Correcte iteratieve berekening voor injectables
-            for (let d = 0; d < totalDays; d++) {
-                const prevDayLevel = d > 0 ? data[d-1] : 0;
-                data[d] = prevDayLevel * dailyDecayFactor;
-
-                // Check of het een injectiedag is
-                if (d < baseDays && (d - lastInjectionDay >= injectionIntervalDays)) {
-                    data[d] += perInjMg;
-                    lastInjectionDay = d;
-                }
-            }
-        }
-
-        summary += `<br>`;
-        resultBox.innerHTML += summary;
-
-        datasets.push({
-            label: name,
-            data,
-            borderColor: getRandomColor(),
-            fill: false,
-            tension: 0.3
-        });
-    }
-
-    resultBox.innerHTML += `
-        <strong>Totals:</strong><br>
-        Total Weekly Injectable Volume: ${totalInjVol.toFixed(2)}ml<br>
-        Total Per Injection Volume: ${totalInjection.toFixed(2)}ml<br>
-        Total Vials Needed: ${totalVials.toFixed(1)}<br>
-        Total Weekly Oral Tabs: ${totalTabsW.toFixed(1)} — Daily: ${totalTabsD.toFixed(2)}<br>
-        Total Bottles Needed: ${totalBottles.toFixed(1)}<br>
-    `;
-
-    if (chart) chart.destroy();
-    chart = new Chart(document.getElementById("chart").getContext("2d"), {
-        type: 'line',
-        data: { labels, datasets },
-        options: {
-            responsive: true,
-            plugins: { legend: { labels: { color: "#f9f9f9" } } },
-            scales: {
-                x: { ticks: { color: "#f9f9f9" }, title: { display: true, text: "Days", color: "#f9f9f9" } },
-                y: { ticks: { color: "#f9f9f9" }, title: { display: true, text: "Active Milligrams (Relative)", color: "#f9f9f9" } },
-            }
-        }
-    });
-    document.getElementById('emailContainer').style.display = 'block';
-
-   // Plaats deze code binnen de <script> tag, ter vervanging van de oude .onclick handler
-
-document.getElementById('sendPdfBtn').onclick = async () => {
-    const email = document.getElementById('userEmail').value;
-    if (!email) {
-        alert('Please enter your email.');
-        return;
-    }
-
-    document.getElementById('sendStatus').innerText = 'Generating & Sending…';
-
-    const chartCanvas = document.getElementById('chart');
-    const chartImage = chartCanvas.toDataURL('image/png');
-    const summaryHtml = document.getElementById('resultBox').innerHTML;
-
-    // We gebruiken een placeholder voor de afbeelding in de template
-    const emailHtmlTemplate = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Your Steroid Cycle Plan</title>
-            <style>
-                body { font-family: sans-serif; color: #333; }
-                .container { max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; }
-                .summary { margin-top: 20px; padding: 15px; background-color: #f9f9f9; border-radius: 5px; }
-                img { max-width: 100%; height: auto; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>Your Cycle Plan & Projection</h1>
-                <div class="summary">
-                    <h2>Summary</h2>
-                    ${summaryHtml}
+        const emailHtmlTemplate = `
+            <!DOCTYPE html>
+            <html>
+            <head><title>Your Steroid Cycle Plan</title></head>
+            <body>
+                <div class="container">
+                    <h1>Your Cycle Plan & Projection</h1>
+                    <div class="summary">
+                        <h2>Summary</h2>
+                        ${summaryHtml}
+                    </div>
+                    <h2>Projected Active Levels</h2>
+                    <img src="%%CHART_IMAGE_URL%%" alt="Steroid Cycle Chart" style="max-width:100%;">
                 </div>
-                <h2>Projected Active Levels</h2>
-                <img src="%%CHART_IMAGE_URL%%" alt="Steroid Cycle Chart">
-            </div>
-        </body>
-        </html>
-    `;
+            </body>
+            </html>
+        `;
 
-    try {
-        const response = await fetch('/.netlify/functions/sendPdf', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                to: email,
-                subject: 'Your Steroid Cycle Plan',
-                html: emailHtmlTemplate,
-                chartImage: chartImage,
-                subscribe: document.getElementById('subscribeCheckbox').checked
-            })
-        });
-
-        const result = await response.json();
-        document.getElementById('sendStatus').innerText = result.success ? 'Sent!' : `Error: ${result.error || 'Unknown error'}`;
-    } catch (err) {
-        document.getElementById('sendStatus').innerText = `Network error: ${err.message}`;
-    }
-};
-
-    // 4. Stuur de volledige HTML naar de Netlify functie
-    try {
-        const response = await fetch('/.netlify/functions/sendPdf', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                to: email,
-                subject: 'Your Steroid Cycle Plan', // We kunnen nu ook een onderwerp meegeven
-                html: emailHtml // Stuur de volledige HTML
-            })
-        });
-
-        const result = await response.json();
-        document.getElementById('sendStatus').innerText = result.success ? 'Sent!' : `Error: ${result.error || 'Unknown error'}`;
-    } catch (err) {
-        document.getElementById('sendStatus').innerText = `Network error: ${err.message}`;
-    }
-};
-}
-  </script>
+        try {
+            const response = await fetch('/.netlify/functions/sendPdf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    to: email,
+                    subject: 'Your Steroid Cycle Plan',
+                    html: emailHtmlTemplate,
+                    chartImage: chartImage,
+                    subscribe: document.getElementById('subscribeCheckbox').checked
+                })
+            });
+            const result = await response.json();
+            document.getElementById('sendStatus').innerText = result.success ? 'Sent!' : `Error: ${result.error || 'Unknown error'}`;
+        } catch (err) {
+            document.getElementById('sendStatus').innerText = `Network error: ${err.message}`;
+        }
+    };
+</script>
 
 </body>
 </html>
