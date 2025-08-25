@@ -42,11 +42,17 @@
 
     <div class="results" id="resultBox"></div>
     <canvas id="chart" style="margin-top:40px;"></canvas>
-    <div id="emailContainer" style="margin-top:20px; display:none;">
-  <label>Want this as a PDF? Enter your email:</label>
-  <input type="email" id="userEmail" placeholder="Your email address" />
-  <button id="sendPdfBtn">Send PDF</button>
-  <span id="sendStatus" style="margin-left:10px;"></span>
+   <div id="emailContainer" style="margin-top:20px; display:none;">
+    <label>Want this as a PDF? Enter your email:</label>
+    <input type="email" id="userEmail" placeholder="Your email address" />
+
+    <div style="margin-top:15px; display:flex; align-items:center;">
+        <input type="checkbox" id="subscribeCheckbox" checked style="width:auto; margin-right:10px;">
+        <label for="subscribeCheckbox" style="display:inline; width:auto;">Ja, voeg mij toe aan de mailinglijst voor updates.</label>
+    </div>
+
+    <button id="sendPdfBtn">Send PDF</button>
+    <span id="sendStatus" style="margin-left:10px;"></span>
 </div>
 
   </div>
@@ -324,10 +330,7 @@
     document.getElementById('emailContainer').style.display = 'block';
 
    // Plaats deze code binnen de <script> tag, ter vervanging van de oude .onclick handler
-<div style="margin-top:15px; display:flex; align-items:center;">
-  <input type="checkbox" id="subscribeCheckbox" checked style="width:auto; margin-right:10px;">
-  <label for="subscribeCheckbox" style="display:inline; width:auto;">Ja, voeg mij toe aan de mailinglijst voor updates.</label>
-</div>
+
 document.getElementById('sendPdfBtn').onclick = async () => {
     const email = document.getElementById('userEmail').value;
     if (!email) {
@@ -338,29 +341,31 @@ document.getElementById('sendPdfBtn').onclick = async () => {
     document.getElementById('sendStatus').innerText = 'Generating & Sending…';
 
     const chartCanvas = document.getElementById('chart');
-    const chartImage = chartCanvas.toDataURL('image/png'); // Dit is de Base64 data
+    const chartImage = chartCanvas.toDataURL('image/png');
     const summaryHtml = document.getElementById('resultBox').innerHTML;
 
-    // We gebruiken nu een placeholder voor de afbeelding
+    // We gebruiken een placeholder voor de afbeelding in de template
     const emailHtmlTemplate = `
         <!DOCTYPE html>
         <html>
         <head>
             <title>Your Steroid Cycle Plan</title>
-            <style> /* Je CSS-stijlen blijven hier */ </style>
+            <style>
+                body { font-family: sans-serif; color: #333; }
+                .container { max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; }
+                .summary { margin-top: 20px; padding: 15px; background-color: #f9f9f9; border-radius: 5px; }
+                img { max-width: 100%; height: auto; }
+            </style>
         </head>
         <body>
             <div class="container">
                 <h1>Your Cycle Plan & Projection</h1>
-                <p>Hi,</p>
-                <p>Here is the cycle plan you generated...</p>
                 <div class="summary">
                     <h2>Summary</h2>
                     ${summaryHtml}
                 </div>
                 <h2>Projected Active Levels</h2>
-                <img src="%%CHART_IMAGE_URL%%" alt="Steroid Cycle Chart" style="max-width:100%;">
-                <div class="footer"> ... </div>
+                <img src="%%CHART_IMAGE_URL%%" alt="Steroid Cycle Chart">
             </div>
         </body>
         </html>
@@ -373,10 +378,10 @@ document.getElementById('sendPdfBtn').onclick = async () => {
             body: JSON.stringify({
                 to: email,
                 subject: 'Your Steroid Cycle Plan',
-                html: emailHtmlTemplate, // Stuur de template met placeholder
-                chartImage: chartImage    // Stuur de afbeeldingsdata apart mee
-            subscribe: document.getElementById('subscribeCheckbox').checked
-})
+                html: emailHtmlTemplate,
+                chartImage: chartImage,
+                subscribe: document.getElementById('subscribeCheckbox').checked
+            })
         });
 
         const result = await response.json();
