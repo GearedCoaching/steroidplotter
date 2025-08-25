@@ -1,34 +1,34 @@
 const nodemailer = require('nodemailer');
 
 exports.handler = async (event) => {
-  console.log("Function started");  
+  console.log("Function started");
   try {
-    const { to, html } = JSON.parse(event.body || '{}');
-    console.log("Received:", { to, htmlExists: !!html });
+    // Haal nu ook de 'subject' op uit de request body
+    const { to, subject, html } = JSON.parse(event.body || '{}');
+    console.log("Received:", { to, subject, htmlExists: !!html });
 
-    if (!to || !html) {
-      console.error("Missing email or content", { to, html });
+    if (!to || !html || !subject) {
+      console.error("Missing email, subject, or content", { to, subject, html });
       return {
         statusCode: 400,
-        body: JSON.stringify({ success: false, error: "Missing email or content" })
+        body: JSON.stringify({ success: false, error: "Missing email, subject, or content" })
       };
     }
 
-    // (Optionally) log your transporter config here if needed—but do not expose passwords
     console.log("About to send email to", to);
 
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: 'info@gearedcoaching.com',
-        pass: process.env.GMAIL_APP_PASSWORD // Use env var
+        pass: process.env.GMAIL_APP_PASSWORD // Perfect!
       }
     });
 
     await transporter.sendMail({
       from: '"Geared Coaching" <info@gearedcoaching.com>',
       to,
-      subject: 'Your Steroid Cycle Report',
+      subject: subject, // Gebruik de variabele 'subject'
       html
     });
 
@@ -45,4 +45,3 @@ exports.handler = async (event) => {
     };
   }
 };
-
