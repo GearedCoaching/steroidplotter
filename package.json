@@ -1,7 +1,9 @@
 {
-  "name": "geared-functions",
+  "name": "steroid-calculator-project",
   "version": "1.0.0",
   "dependencies": {
-    "nodemailer": "^6.9.8"
+    "nodemailer": "^6.9.8",
+    "cloudinary": "^2.0.0",
+    "@mailchimp/mailchimp_marketing": "^3.0.80"
   }
 }
