@@ -27,8 +27,11 @@
     <label>Injection Frequency (per week)</label>
     <select id="frequency">
       <option value="7">Every day (7x)</option>
+      <option value="6">6x/week</option>
       <option value="5">5x/week</option>
-      <option value="3">Every other day (~3x)</option>
+      <option value="4">4x/week</option>
+      <option value="">3x/week</option>
+      <option value="3,5">Every other day (~3.5x)</option>
       <option value="2">Twice a week</option>
       <option value="1">Once a week</option>
     </select>
@@ -236,7 +239,10 @@
           const weeklyML = doseMg / conc;
           const perInj = weeklyML / freq;
           totalInjVol += weeklyML;
-          summary += `Weekly Vol: ${weeklyML.toFixed(2)}ml, Per Inj: ${perInj.toFixed(2)}ml<br>`;
+          totalInjection += perInj;
+           const totalML = weeklyML * weeks;
+        const vials = totalML / vial;
+          summary += `Weekly Vol: ${weeklyML.toFixed(2)}ml, Per Inj: ${perInj.toFixed(2)}ml<br>`;Vials Needed: ${vials.toFixed(1)}<br>`;
 
           for (let d = 0; d < totalDays; d++) {
             if (d < baseDays) {
@@ -255,7 +261,7 @@
         datasets.push({ label: name, data, borderColor: getRandomColor(), fill: false, tension: 0.3 });
       }
 
-      resultBox.innerHTML += `<hr>Total Inj Volume: ${totalInjVol.toFixed(2)}ml<br>Total Oral Tabs/Week: ${totalTabsW.toFixed(1)}, per Day: ${totalTabsD.toFixed(2)}<br>`;
+      resultBox.innerHTML += `<hr>Total Inj Volume: ${totalInjVol.toFixed(2)}ml<br>Total per Inj Volume: ${perInj.toFixed(2)}ml<br>Vials Needed: ${vials.toFixed(1)}<br>Total Oral Tabs/Week: ${totalTabsW.toFixed(1)}<br>per Day: ${totalTabsD.toFixed(2)}<br>Bottles Needed: ${bottlesNeeded.toFixed(1)}<br>`;
 
       if (chart) chart.destroy();
       chart = new Chart(document.getElementById("chart").getContext("2d"), {
