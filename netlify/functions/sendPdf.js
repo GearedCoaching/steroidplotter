@@ -1,12 +1,21 @@
 const nodemailer = require('nodemailer');
 const cloudinary = require('cloudinary').v2;
+const mailchimp = require('@mailchimp/mailchimp_marketing');
 
-// Configureer Cloudinary met de environment variables die je in Netlify hebt ingesteld
+// Configureer Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+
+// Configureer Mailchimp
+mailchimp.setConfig({
+  apiKey: process.env.MAILCHIMP_API_KEY,
+  server: process.env.MAILCHIMP_SERVER_PREFIX,
+});
+
+const listId = process.env.MAILCHIMP_LIST_ID;
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -14,27 +23,17 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Haal nu ook de 'chartImage' data op
     const { to, subject, html, chartImage } = JSON.parse(event.body || '{}');
 
     if (!to || !html || !chartImage) {
       return { statusCode: 400, body: JSON.stringify({ success: false, error: "Missing required fields" }) };
     }
 
-    // 1. Upload de afbeelding naar Cloudinary
-    // De 'chartImage' is een base64 data URL, die kan Cloudinary direct verwerken
-    const uploadResult = await cloudinary.uploader.upload(chartImage, {
-      folder: "cycle-charts", // Optioneel: organiseer uploads in een map
-      resource_type: "image"
-    });
-    
-    // De veilige, openbare URL van de geüploade afbeelding
+    // --- Stap 1: E-mail versturen (bestaande logica) ---
+    const uploadResult = await cloudinary.uploader.upload(chartImage, { folder: "cycle-charts" });
     const imageUrl = uploadResult.secure_url;
-
-    // 2. Vervang de placeholder in de HTML met de echte afbeeldings-URL
     const finalHtml = html.replace('%%CHART_IMAGE_URL%%', imageUrl);
 
-    // 3. Verstuur de e-mail met de bijgewerkte HTML
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -47,10 +46,25 @@ exports.handler = async (event) => {
       from: '"Geared Coaching" <info@gearedcoaching.com>',
       to,
       subject,
-      html: finalHtml, // Gebruik de definitieve HTML
+      html: finalHtml,
     });
 
-    console.log(`Email sent successfully to ${to} with chart ${imageUrl}`);
+    console.log(`Email sent successfully to ${to}`);
+
+    // --- Stap 2: E-mailadres toevoegen aan Mailchimp ---
+    try {
+      await mailchimp.lists.addListMember(listId, {
+        email_address: to,
+        status: "subscribed", // Zet de gebruiker direct op 'subscribed'
+      });
+      console.log(`${to} successfully added to Mailchimp list.`);
+    } catch (mailchimpError) {
+      // Dit is een 'non-critical' error. De gebruiker heeft zijn e-mail al ontvangen.
+      // We loggen de fout, maar laten de functie slagen.
+      // Mailchimp geeft vaak een error als de gebruiker al op de lijst staat, wat prima is.
+      console.warn(`Could not add ${to} to Mailchimp:`, mailchimpError.message);
+    }
+
     return {
       statusCode: 200,
       body: JSON.stringify({ success: true })
